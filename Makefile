@@ -6,7 +6,8 @@ CODEPY_LIB_DIR=$(CIRCUIT_PYTHON_DIR)/lib
 
 # These shouldn't need changing, but eh ...
 CURLFLAGS="--location"
-all: venv downloads
+
+all: venv downloads .gitignore
 
 venv: venv/touchfile
 
@@ -18,6 +19,10 @@ venv/touchfile: requirements.txt
 
 test: venv
 	. venv/bin/activate; nosetests project/test
+
+.gitignore:
+	curl https://www.toptal.com/developers/gitignore/api/python,circuitpython,git,virtualenv,macos,vim -o .gitignore
+	printf "\n# Also ignore the downloads directory\ndownloads\n" >> .gitignore
 
 downloads: \
 	downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2 \
