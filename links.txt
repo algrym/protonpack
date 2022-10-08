@@ -1,0 +1,11 @@
+
+Getting Started with Raspberry Pi Pico, CircuitPython, and NeoPixels LEDs
+https://learn.adafruit.com/getting-started-with-raspberry-pi-pico-circuitpython/neopixel-leds
+
+CircuitPython Libraries
+https://learn.adafruit.com/welcome-to-circuitpython/circuitpython-libraries
+
+https://circuitpython.org/libraries
+
+Adafruit CircuitPython NeoPixel
+https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel
