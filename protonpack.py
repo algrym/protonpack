@@ -1,15 +1,34 @@
+import os
 import sys
-import board
-import digitalio
-import neopixel
 import time
 
-def print_startup ():
+import board
+import digitalio
+import microcontroller
+import neopixel
+
+# We know there's at least one
+number_cpus = 1
+
+
+def print_startup():
     print("-=< protonpack v0.1 - https://github.com/algrym/protonpack/ >=-")
-    print(f" - platform: {sys.platform} v{sys.version}")
+    print(f" - uname: {os.uname()}")
+    print(f" - python v{sys.version}")
+    print(f" - cpu count: {number_cpus}")
     print(f" - neopixel v{neopixel.__version__}")
 
-def heartbeat_led ():
+
+def update_cpu_count() -> int:
+    global number_cpus
+    count = 0
+    for cpu in microcontroller.cpus:
+        count += 1
+    number_cpus = count
+    return count
+
+
+def heartbeat_led():
     led = digitalio.DigitalInOut(board.LED)
     led.direction = digitalio.Direction.OUTPUT
     while True:
@@ -22,16 +41,19 @@ def heartbeat_led ():
         led.value = False
         time.sleep(0.5)
 
+
 def main() -> int:
+    update_cpu_count()
     print_startup()
     heartbeat_led()
     return 0;
+
 
 # main
 if __name__ == '__main__':
     sys.exit(main())
 
-#pixels = neopixel.NeoPixel(board.NEOPIXEL, 10, auto_write=False)
-#pixels[0] = (10, 0, 0)
-#pixels[9] = (0, 10, 0)
-#pixels.show()
+# pixels = neopixel.NeoPixel(board.NEOPIXEL, 10, auto_write=False)
+# pixels[0] = (10, 0, 0)
+# pixels[9] = (0, 10, 0)
+# pixels.show()
