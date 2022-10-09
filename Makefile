@@ -21,7 +21,7 @@ test: venv
 	. venv/bin/activate; nosetests project/test
 
 .gitignore:
-	curl https://www.toptal.com/developers/gitignore/api/python,circuitpython,git,virtualenv,macos,vim -o .gitignore
+	curl https://www.toptal.com/developers/gitignore/api/python,circuitpython,git,virtualenv,macos,vim,pycharm -o .gitignore
 	printf "\n# Also ignore the downloads directory\ndownloads\n" >> .gitignore
 
 downloads: \
