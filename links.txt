@@ -12,3 +12,6 @@ https://docs.circuitpython.org/en/7.3.x/docs/library/index.html
 
 Adafruit CircuitPython NeoPixel
 https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel
+
+Awesome CircuitPython
+https://github.com/adafruit/awesome-circuitpython
