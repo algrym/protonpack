@@ -1,5 +1,5 @@
 # This works for Macs.  Need to update for other platforms.
-PRE-CIRCUIT_PYTHON_DIR=/Volumes/RPI-RP2
+UF2_DIR=/Volumes/RPI-RP2
 CIRCUIT_PYTHON_DIR=/Volumes/CIRCUITPY
 CODEPY_PATH=$(CIRCUIT_PYTHON_DIR)/code.py
 CODEPY_LIB_DIR=$(CIRCUIT_PYTHON_DIR)/lib
@@ -38,7 +38,7 @@ downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2:
 	curl $(CURLFLAGS) https://downloads.circuitpython.org/bin/raspberry_pi_pico/en_US/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2 -o $(@)
 
 install_circuit_python: downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2
-	cp downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2 $(PRE-CIRCUIT_PYTHON_DIR)/
+	cp downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2 $(UF2_DIR)/
 
 install: all
 	cp protonpack.py $(CODEPY_PATH)
