@@ -13,7 +13,7 @@ protonpack_version: str = '0.4'
 
 # Update this to match the number of NeoPixel LEDs connected to your boards
 neopixel_stick_num_pixels: int = 20
-neopixel_ring_num_pixels: int = 20
+neopixel_ring_num_pixels: int = 60
 
 # Which pins are the stick and ring connected to?
 # (These should be different, but you do you.)
@@ -21,11 +21,12 @@ neopixel_stick_pin = board.GP1
 neopixel_ring_pin = board.GP0
 
 neopixel_stick_brightness: float = 0.008  # 0.008 is the dimmest I can make them
-neopixel_ring_brightness: float = 0.02  # 0.008 is the dimmest I can make them
+neopixel_ring_brightness: float = 0.05  # 0.008 is the dimmest I can make them
 
 # How fast should the neopixel cycle?
-neopixel_stick_speed = 40
-neopixel_ring_speed = 40
+sleep_duration: float = 0.001
+neopixel_stick_speed = 6
+neopixel_ring_speed = 3
 
 # Color constants
 RED = (255, 0, 0)
@@ -97,7 +98,7 @@ def neopixel_run():
         onboard_led.value = clock % 2
         clock += 1
 
-        time.sleep(0.1)
+        time.sleep(sleep_duration)
 
 
 def main() -> int:
