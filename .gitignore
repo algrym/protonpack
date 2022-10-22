@@ -365,3 +365,6 @@ pip-selfcheck.json
 
 # Also ignore the downloads directory
 downloads
+
+# Also ignore .idea/ directory
+.idea/

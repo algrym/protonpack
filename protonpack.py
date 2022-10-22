@@ -13,19 +13,21 @@ protonpack_version: str = '0.4'
 
 # Update this to match the number of NeoPixel LEDs connected to your boards
 neopixel_stick_num_pixels: int = 20
-neopixel_ring_num_pixels: int = 20
+neopixel_ring_num_pixels: int = 60
 
 # Which pins are the stick and ring connected to?
 # (These should be different, but you do you.)
-neopixel_stick_pin = board.GP1
-neopixel_ring_pin = board.GP0
+neopixel_stick_pin = board.GP27
+neopixel_ring_pin = board.GP28
 
-neopixel_stick_brightness: float = 0.008  # 0.008 is the dimmest I can make them
-neopixel_ring_brightness: float = 0.02  # 0.008 is the dimmest I can make them
+neopixel_stick_brightness: float = 0.02  # 0.008 is the dimmest I can make the stick
+neopixel_ring_brightness: float = 0.3  # 0.008 is the dimmest I can make them
 
 # How fast should the neopixel cycle?
-neopixel_stick_speed = 40
-neopixel_ring_speed = 40
+sleep_duration: float = 0.001
+neopixel_stick_speed = 6
+neopixel_ring_speed = 3
+onboard_led_speed = 20
 
 # Color constants
 RED = (255, 0, 0)
@@ -61,6 +63,7 @@ def neopixel_run():
 
     # Main driver loop
     clock = ring_cursor = 0
+    ring_previous = len(ring_pixels) - 1
     stick_cursor = stick_max = 0
     while True:
         # if the clock is a multiple of the speed,
@@ -70,11 +73,16 @@ def neopixel_run():
         if clock % neopixel_ring_speed == 0:
             if ring_pixels[ring_cursor] == OFF:
                 ring_pixels[ring_cursor] = RED
+                ring_pixels[ring_previous] = RED
             else:
                 ring_pixels[ring_cursor] = OFF
+                ring_pixels[ring_previous] = OFF
+                ring_previous = ring_cursor
                 ring_cursor += 1
         if ring_cursor >= len(ring_pixels):
             ring_cursor = 0
+        if ring_previous >= len(ring_pixels):
+            ring_previous = 0
 
         # increment the power cell
         if clock % neopixel_stick_speed == 0:
@@ -94,10 +102,10 @@ def neopixel_run():
             clock = 0
 
         # increment the LED and clock
-        onboard_led.value = clock % 2
+        onboard_led.value = clock % onboard_led_speed
         clock += 1
 
-        time.sleep(0.1)
+        time.sleep(sleep_duration)
 
 
 def main() -> int:
