@@ -23,6 +23,7 @@ test: venv
 .gitignore:
 	curl https://www.toptal.com/developers/gitignore/api/python,circuitpython,git,virtualenv,macos,vim,pycharm -o .gitignore
 	printf "\n# Also ignore the downloads directory\ndownloads\n" >> .gitignore
+	printf "\n# Also ignore .idea/ directory\n.idea/\n" >> .gitignore
 
 downloads: \
 	downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2 \
