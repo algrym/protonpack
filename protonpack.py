@@ -24,7 +24,7 @@ neopixel_stick_brightness: float = 0.02  # 0.008 is the dimmest I can make the s
 neopixel_ring_brightness: float = 0.3  # 0.008 is the dimmest I can make them
 
 # How fast should the neopixel cycle?
-# This is (almost) microseconds per increment so: Higher is slower
+# This is (similar to) microseconds per increment so: Higher is slower
 neopixel_stick_speed = 20
 neopixel_ring_speed_current = 80  # Start this high to emulate spin-up
 neopixel_ring_speed_cruise = 10
@@ -58,13 +58,13 @@ ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
                                 brightness=neopixel_ring_brightness)
 
 
-# Setup a function to turn everything off on exit
+# callback to turn everything off on exit
 def all_off():
     print("Exiting: all pixels off.")
     stick_pixels.fill(OFF)
     ring_pixels.fill(OFF)
 
-
+# turn everything off on exit
 atexit.register(all_off)
 
 # set up main driver loop
@@ -112,6 +112,7 @@ while True:
 
     # increment the power cell
     if clock > stick_clock_next:
+        # calculate time of next stick update
         stick_clock_next = clock + neopixel_stick_speed
 
         # reset if the cursor is over the max
