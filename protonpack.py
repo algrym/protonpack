@@ -9,7 +9,7 @@ import neopixel
 import supervisor
 
 # Software version
-protonpack_version: str = '0.7'
+protonpack_version: str = '0.8'
 
 # Update this to match the number of NeoPixel LEDs connected to your boards
 neopixel_stick_num_pixels: int = 20
@@ -63,6 +63,7 @@ def all_off():
     print("Exiting: all pixels off.")
     stick_pixels.fill(OFF)
     ring_pixels.fill(OFF)
+    sys.exit(0)
 
 # turn everything off on exit
 atexit.register(all_off)
@@ -77,7 +78,7 @@ stick_clock_next = ring_clock_next = adjust_clock_next = 0
 while True:
     clock = supervisor.ticks_ms()
 
-    # incrememt speeds
+    # increment speeds
     if clock > adjust_clock_next:
         # calculate time of next speed update
         adjust_clock_next = clock + change_speed
