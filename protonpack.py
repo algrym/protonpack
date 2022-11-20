@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import atexit
 import os
 import random
 import sys
@@ -6,7 +7,6 @@ import sys
 import board
 import neopixel
 import supervisor
-import atexit
 
 # Software version
 protonpack_version: str = '0.7'
@@ -57,11 +57,13 @@ ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
                                 neopixel_ring_num_pixels,
                                 brightness=neopixel_ring_brightness)
 
+
 # Setup a function to turn everything off on exit
-def all_off ():
+def all_off():
     print("Exiting: all pixels off.")
     stick_pixels.fill(OFF)
     ring_pixels.fill(OFF)
+
 
 atexit.register(all_off)
 
@@ -75,6 +77,7 @@ stick_clock_next = ring_clock_next = adjust_clock_next = 0
 while True:
     clock = supervisor.ticks_ms()
 
+    # incrememt speeds
     if clock > adjust_clock_next:
         # calculate time of next speed update
         adjust_clock_next = clock + change_speed
@@ -88,6 +91,7 @@ while True:
             neopixel_ring_speed_current -= 1
             ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
 
+    # increment the ring
     if clock > ring_clock_next:
         # Calculate time of next ring update
         ring_clock_next = clock + neopixel_ring_speed_current
