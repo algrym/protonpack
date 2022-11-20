@@ -2,10 +2,10 @@
 import os
 import random
 import sys
-import time
 
 import board
 import neopixel
+import supervisor
 
 # Software version
 protonpack_version: str = '0.6'
@@ -23,16 +23,14 @@ neopixel_stick_brightness: float = 0.02  # 0.008 is the dimmest I can make the s
 neopixel_ring_brightness: float = 0.3  # 0.008 is the dimmest I can make them
 
 # How fast should the neopixel cycle?
-# Higher is slower
-neopixel_stick_speed = 6
-neopixel_ring_speed_current = 30
-neopixel_ring_speed_cruise = 5
+# This is (almost) microseconds per increment so: Higher is slower
+neopixel_stick_speed = 20
+neopixel_ring_speed_current = 80  # Start this high to emulate spin-up
+neopixel_ring_speed_cruise = 10
+change_speed = 30  # How often should we change speed?
 
-# what's the minimum stick index that will cause a spark
-# - Max: neopixel_stick_num_pixels
-# - Min: 0
-# - Lower numbers means spark more frequently
-stick_pixel_spark_min = 18
+# how many LEDs should the ring light at one time?
+ring_cursor_width = 3
 
 # Print startup info
 print(f"-=< protonpack v{protonpack_version} - https://github.com/algrym/protonpack/ >=-")
@@ -59,52 +57,57 @@ ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
                                 brightness=neopixel_ring_brightness)
 
 # set up main driver loop
-ring_cursor = stick_cursor = stick_max = 0
+ring_cursor_on = ring_cursor_off = 0
+stick_cursor = stick_max = 0
 stick_pixel_max = 1
-ring_previous = len(ring_pixels) - 1
+stick_clock_next = ring_clock_next = adjust_clock_next = 0
 
 # main driver loop
 while True:
-    clock = time.monotonic_ns()
-    # if the clock is a multiple of the speed,
-    #   check the status of the pixel at the cursor.
-    #      Turn it on if it's off.
-    #      Turn it off if it's on, and increment the cursor.
-    if clock % neopixel_ring_speed_current == 0:
-        # handle speed fluctuations
-        if (ring_cursor % neopixel_ring_speed_current == 0):
-            if stick_pixel_max < len(stick_pixels):
-                stick_pixel_max += 1
+    clock = supervisor.ticks_ms()
+    print(clock)
 
-            if (neopixel_ring_speed_current >= neopixel_ring_speed_cruise):
-                neopixel_ring_speed_current -= 1
-            elif (neopixel_ring_speed_current < neopixel_ring_speed_cruise):
-                neopixel_ring_speed_current += 1
+    if clock > adjust_clock_next:
+        # calculate time of next speed update
+        adjust_clock_next = clock + change_speed
 
-        if ring_pixels[ring_cursor] == OFF:
-            ring_pixels[ring_cursor] = RED
-            ring_pixels[ring_previous] = RED
-        else:
-            ring_pixels[ring_cursor] = OFF
-            ring_pixels[ring_previous] = OFF
-            ring_previous = ring_cursor
-            ring_cursor += 1
-    if ring_cursor >= len(ring_pixels):
-        ring_cursor = 0
-    if ring_previous >= len(ring_pixels):
-        ring_previous = 0
+        # adjust stick max if its too low
+        if stick_pixel_max < len(stick_pixels):
+            stick_pixel_max += 1
+
+        # adjust ring speed if its too low
+        if (neopixel_ring_speed_current > neopixel_ring_speed_cruise):
+            neopixel_ring_speed_current -= 1
+            ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
+
+    if clock > ring_clock_next:
+        # Calculate time of next ring update
+        ring_clock_next = clock + neopixel_ring_speed_current
+
+        # turn on the appropriate pixels
+        ring_pixels[ring_cursor_on] = RED
+        ring_pixels[ring_cursor_off] = OFF
+
+        # increment cursors
+        ring_cursor_off = ring_cursor_on - ring_cursor_width
+        ring_cursor_on += 1
+
+        # Reset the ring_cursor if it goes out of bounds
+        if ring_cursor_on >= len(ring_pixels):
+            ring_cursor_on = 0
+        if ring_cursor_off >= len(ring_pixels):
+            ring_cursor_off = 0
 
     # increment the power cell
-    if clock % neopixel_stick_speed == 0:
-        if stick_cursor >= stick_max:
-            if stick_cursor >= stick_pixel_spark_min:
-                ring_pixels[ring_cursor] = WHITE  # flash the ring element to white
-            neopixel_ring_speed_current -= 1  # momentarily speed up the ring
+    if clock > stick_clock_next:
+        stick_clock_next = clock + neopixel_stick_speed
+
+        # reset if the cursor is over the max
+        if stick_cursor > stick_max:
+            ring_pixels[ring_cursor_off] = BLUE  # spark when we hit max
             stick_max = random.randrange(0, stick_pixel_max)
             stick_cursor = 0
             stick_pixels.fill(OFF)
 
         stick_pixels[stick_cursor] = BLUE
         stick_cursor += 1
-    if stick_cursor >= len(stick_pixels):
-        stick_pixels = 0
