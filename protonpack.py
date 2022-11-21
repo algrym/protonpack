@@ -34,19 +34,21 @@ neopixel_ring_brightness: float = 0.3  # 0.008 is the dimmest I can make them
 
 # How fast should the neopixel cycle?
 # This is (similar to) microseconds per increment so: Higher is slower
-neopixel_stick_speed = 20
-neopixel_ring_speed_current = 80  # Start this high to emulate spin-up
-neopixel_ring_speed_cruise = 10
-change_speed = 30  # How often should we change speed?
+neopixel_stick_speed: int = 20
+neopixel_ring_speed_current: int = 80  # Start this high to emulate spin-up
+neopixel_ring_speed_cruise: int = 10
+change_speed: int = 30  # How often should we change speed?
 
 # how many LEDs should the ring light at one time?
-ring_cursor_width = 3
+ring_cursor_width: int = 3
 
 # Print startup info
 print(f"-=< protonpack v{protonpack_version} - https://github.com/algrym/protonpack/ >=-")
 print(f" - uname: {os.uname()}")
 print(f" - python v{sys.version}")
 print(f" - neopixel v{neopixel.__version__}")
+print(f" - Adafruit fancyled v{fancyled.__version__}")
+print(f" - Adafruit debounce v{Debouncer}")
 
 # Color constants
 RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0))
