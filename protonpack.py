@@ -7,6 +7,8 @@ import sys
 import board
 import neopixel
 import supervisor
+import digitalio
+from adafruit_debouncer import Debouncer
 
 # Software version
 protonpack_version: str = '0.8'
@@ -19,6 +21,10 @@ neopixel_ring_num_pixels: int = 60
 # (These should be different, but you do you.)
 neopixel_stick_pin = board.GP27
 neopixel_ring_pin = board.GP28
+
+# Input pin numbers
+trigger_input_pin = board.GP26
+select_input_pin = board.GP22
 
 # Pixel brightness
 neopixel_stick_brightness: float = 0.02  # 0.008 is the dimmest I can make the stick
@@ -50,14 +56,30 @@ PURPLE = (128, 0, 128)
 WHITE = (255, 255, 255)
 OFF = (0, 0, 0)
 
+ring_on_color = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
+
 # initialize neopixels
+print(f" - NeoPixel stick size {neopixel_stick_num_pixels} on {neopixel_stick_pin}")
 stick_pixels = neopixel.NeoPixel(neopixel_stick_pin,
                                  neopixel_stick_num_pixels,
                                  brightness=neopixel_stick_brightness)
+print(f" - NeoPixel ring  size {neopixel_ring_num_pixels} on {neopixel_ring_pin}")
 ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
                                 neopixel_ring_num_pixels,
                                 brightness=neopixel_ring_brightness)
 
+# initialize buttons
+print(f" - Input trigger on {trigger_input_pin}")
+trigger_button_pin = digitalio.DigitalInOut(trigger_input_pin)
+trigger_button_pin.direction = digitalio.Direction.INPUT
+trigger_button_pin.pull = digitalio.Pull.UP
+trigger_button = Debouncer(trigger_button_pin)
+
+print(f" - Input select on {select_input_pin}")
+select_button_pin = digitalio.DigitalInOut(select_input_pin)
+select_button_pin.direction = digitalio.Direction.INPUT
+select_button_pin.pull = digitalio.Pull.UP
+select_button = Debouncer(select_button_pin)
 
 # callback to turn everything off on exit
 def all_off():
@@ -70,7 +92,7 @@ def all_off():
 atexit.register(all_off)
 
 # set up main driver loop
-ring_cursor_on = ring_cursor_off = 0
+ring_cursor_on = ring_cursor_off = ring_color_index = 0
 stick_cursor = stick_max_previous = stick_max = 0
 stick_pixel_max = 1
 stick_clock_next = ring_clock_next = adjust_clock_next = 0
@@ -78,6 +100,19 @@ stick_clock_next = ring_clock_next = adjust_clock_next = 0
 # main driver loop
 while True:
     clock = supervisor.ticks_ms()
+
+    # check trigger button
+    trigger_button.update()
+    if trigger_button.value:
+        print(f" - Trigger down at {clock}")
+
+    # check select button
+    select_button.update()
+    if select_button.fell:
+        ring_color_index += 1
+        if ring_color_index >= len(ring_on_color):
+            ring_color_index = 0
+        print(f" - Ring color set to {ring_on_color[ring_color_index]}")
 
     # increment speeds
     if clock > adjust_clock_next:
@@ -99,7 +134,7 @@ while True:
         ring_clock_next = clock + neopixel_ring_speed_current
 
         # turn on the appropriate pixels
-        ring_pixels[ring_cursor_on] = RED
+        ring_pixels[ring_cursor_on] = ring_on_color[ring_color_index]
         ring_pixels[ring_cursor_off] = OFF
 
         # increment cursors
