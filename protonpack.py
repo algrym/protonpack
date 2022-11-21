@@ -118,9 +118,7 @@ while True:
     # check select button
     select_button.update()
     if select_button.fell:
-        ring_color_index += 1
-        if ring_color_index >= len(ring_on_color):
-            ring_color_index = 0
+        ring_color_index = (ring_color_index + 1) % len(ring_on_color)
         print(f" - Ring color set to {ring_on_color[ring_color_index]}")
 
     # increment speeds
@@ -128,12 +126,12 @@ while True:
         # calculate time of next speed update
         adjust_clock_next = clock + change_speed
 
-        # adjust stick max if its too low
+        # adjust stick max if it's too low
         if stick_pixel_max < len(stick_pixels):
             stick_pixel_max += 1
 
-        # adjust ring speed if its too low
-        if (neopixel_ring_speed_current > neopixel_ring_speed_cruise):
+        # adjust ring speed if it's too low
+        if neopixel_ring_speed_current > neopixel_ring_speed_cruise:
             neopixel_ring_speed_current -= 1
             ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
 
@@ -147,14 +145,8 @@ while True:
         ring_pixels[ring_cursor_off] = OFF
 
         # increment cursors
-        ring_cursor_off = ring_cursor_on - ring_cursor_width
-        ring_cursor_on += 1
-
-        # Reset the ring_cursor if it goes out of bounds
-        if ring_cursor_on >= len(ring_pixels):
-            ring_cursor_on = 0
-        if ring_cursor_off >= len(ring_pixels):
-            ring_cursor_off = 0
+        ring_cursor_off = (ring_cursor_on - ring_cursor_width) % len(ring_pixels)
+        ring_cursor_on = (ring_cursor_on + 1) % len(ring_pixels)
 
     # increment the power cell
     if clock > stick_clock_next:
