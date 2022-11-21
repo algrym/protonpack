@@ -20,6 +20,7 @@ neopixel_ring_num_pixels: int = 60
 neopixel_stick_pin = board.GP27
 neopixel_ring_pin = board.GP28
 
+# Pixel brightness
 neopixel_stick_brightness: float = 0.02  # 0.008 is the dimmest I can make the stick
 neopixel_ring_brightness: float = 0.3  # 0.008 is the dimmest I can make them
 
