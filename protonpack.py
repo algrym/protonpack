@@ -49,13 +49,13 @@ print(f" - python v{sys.version}")
 print(f" - neopixel v{neopixel.__version__}")
 
 # Color constants
-RED = fancyled.gamma_adjust(CRGB(255, 0, 0))
-ORANGE = fancyled.gamma_adjust(CRGB(255, 165, 0))
-YELLOW = fancyled.gamma_adjust(CRGB(255, 255, 0))
-GREEN = fancyled.gamma_adjust(CRGB(0, 255, 0))
-BLUE = fancyled.gamma_adjust(CRGB(0, 0, 255))
-PURPLE = fancyled.gamma_adjust(CRGB(128, 0, 128))
-WHITE = fancyled.gamma_adjust(CRGB(255, 255, 255))
+RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0))
+ORANGE = fancyled.gamma_adjust(fancyled.CRGB(255, 165, 0))
+YELLOW = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 0))
+GREEN = fancyled.gamma_adjust(fancyled.CRGB(0, 255, 0))
+BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255))
+PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128))
+WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255))
 OFF = (0, 0, 0)
 
 ring_on_color = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
