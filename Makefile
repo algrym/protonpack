@@ -47,6 +47,7 @@ install: all
 		downloads/adafruit-circuitpython-bundle-7.x-mpy-20221007/lib/neopixel* \
 		downloads/adafruit-circuitpython-bundle-7.x-mpy-20221007/lib/*ticks* \
 		downloads/adafruit-circuitpython-bundle-7.x-mpy-20221007/lib/*debouncer* \
+		downloads/adafruit-circuitpython-bundle-7.x-mpy-20221007/lib/*adafruit_fancyled* \
 			$(CODEPY_LIB_DIR)
 
 clean:

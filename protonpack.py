@@ -8,10 +8,12 @@ import board
 import neopixel
 import supervisor
 import digitalio
+
+import adafruit_fancyled.adafruit_fancyled as fancyled
 from adafruit_debouncer import Debouncer
 
 # Software version
-protonpack_version: str = '0.8'
+protonpack_version: str = '0.9'
 
 # Update this to match the number of NeoPixel LEDs connected to your boards
 neopixel_stick_num_pixels: int = 20
@@ -47,13 +49,13 @@ print(f" - python v{sys.version}")
 print(f" - neopixel v{neopixel.__version__}")
 
 # Color constants
-RED = (255, 0, 0)
-ORANGE = (255, 165, 0)
-YELLOW = (255, 255, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-PURPLE = (128, 0, 128)
-WHITE = (255, 255, 255)
+RED = fancyled.gamma_adjust(CRGB(255, 0, 0))
+ORANGE = fancyled.gamma_adjust(CRGB(255, 165, 0))
+YELLOW = fancyled.gamma_adjust(CRGB(255, 255, 0))
+GREEN = fancyled.gamma_adjust(CRGB(0, 255, 0))
+BLUE = fancyled.gamma_adjust(CRGB(0, 0, 255))
+PURPLE = fancyled.gamma_adjust(CRGB(128, 0, 128))
+WHITE = fancyled.gamma_adjust(CRGB(255, 255, 255))
 OFF = (0, 0, 0)
 
 ring_on_color = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
