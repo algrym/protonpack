@@ -4,12 +4,11 @@ import os
 import random
 import sys
 
+import adafruit_fancyled.adafruit_fancyled as fancyled
 import board
+import digitalio
 import neopixel
 import supervisor
-import digitalio
-
-import adafruit_fancyled.adafruit_fancyled as fancyled
 from adafruit_debouncer import Debouncer
 
 # Software version
@@ -85,12 +84,14 @@ select_button_pin.direction = digitalio.Direction.INPUT
 select_button_pin.pull = digitalio.Pull.UP
 select_button = Debouncer(select_button_pin)
 
+
 # callback to turn everything off on exit
 def all_off():
     print("Exiting: all pixels off.")
     stick_pixels.fill(OFF)
     ring_pixels.fill(OFF)
     sys.exit(0)
+
 
 # turn everything off on exit
 atexit.register(all_off)
