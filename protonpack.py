@@ -70,7 +70,7 @@ atexit.register(all_off)
 
 # set up main driver loop
 ring_cursor_on = ring_cursor_off = 0
-stick_cursor = stick_max = 0
+stick_cursor = stick_max_previous = stick_max = 0
 stick_pixel_max = 1
 stick_clock_next = ring_clock_next = adjust_clock_next = 0
 
@@ -119,9 +119,13 @@ while True:
         # reset if the cursor is over the max
         if stick_cursor > stick_max:
             ring_pixels[ring_cursor_off] = BLUE  # spark when we hit max
+            stick_max_previous = stick_max
             stick_max = random.randrange(0, stick_pixel_max)
             stick_cursor = 0
             stick_pixels.fill(OFF)
 
         stick_pixels[stick_cursor] = BLUE
+        stick_pixels[stick_max_previous] = GREEN
         stick_cursor += 1
+
+    pass
