@@ -103,7 +103,11 @@ while True:
 
     # check trigger button
     trigger_button.update()
-    if trigger_button.value:
+    if trigger_button.rose:
+        ring_pixels.fill(WHITE)
+        print(f" - Trigger   up at {clock}")
+    elif trigger_button.fell:
+        ring_pixels.fill(OFF)
         print(f" - Trigger down at {clock}")
 
     # check select button
