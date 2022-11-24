@@ -61,8 +61,7 @@ RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0), brightness=brightness_leve
 ORANGE = fancyled.gamma_adjust(fancyled.CRGB(255, 165, 0), brightness=brightness_levels).pack()
 YELLOW = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 0), brightness=brightness_levels).pack()
 GREEN = fancyled.gamma_adjust(fancyled.CRGB(0, 255, 0), brightness=brightness_levels).pack()
-BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255),
-                             brightness=brightness_levels).pack()  # Sadly gamma eats this color :(
+BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255), brightness=brightness_levels).pack()
 PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128), brightness=brightness_levels).pack()
 WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
 OFF = (0, 0, 0)
@@ -93,10 +92,8 @@ select_button_pin.pull = digitalio.Pull.UP
 select_button = Debouncer(select_button_pin)
 
 
-# callback to turn everything off on exit
-
-
 def all_off():
+    # callback to turn everything off on exit
     print(' - Exiting: all pixels off.')
     stick_pixels.fill(OFF)
     ring_pixels.fill(OFF)
@@ -131,24 +128,29 @@ while True:
             neopixel_ring_speed_current -= 1
             ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
 
-
     # check trigger button
+    #   trigger/release/value are inverted from what I'd expect
     trigger_button.update()
-    if trigger_button.rose:  # Handle releasing the button
+    if trigger_button.rose:  # Handle trigger release
         ring_pixels.fill(OFF)
-        print(f" - Trigger {trigger_button.value} rose at {clock}")
-    elif trigger_button.fell:  # Handle trigger up
+        print(f"   - Trigger rose at {clock}")
+    elif trigger_button.fell:  # Handle trigger engage
         ring_pixels.fill(WHITE)
-        print(f" - Trigger {trigger_button.value} fell at {clock}")
+        print(f"   - Trigger fell at {clock}")
 
     if not trigger_button.value:
-        # Trigger down: flash the cyclotron!
-        if (clock % 5) == 0:
+        # Trigger active: flash the cyclotron!
+        flash_random = random.randrange(0, 20)
+        if flash_random < 3:
+            ring_pixels.fill(ring_on_color[ring_color_index])
+        elif flash_random == 4:
+            ring_pixels.fill(WHITE)
+        elif flash_random == 5:
             ring_pixels.fill(ring_on_color[random.randrange(0, len(ring_on_color))])
         else:
             ring_pixels.fill(OFF)
 
-        # Trigger down: decrement the power
+        # Trigger active: decrement the power meter!
         if (clock % 150) == 0:
             if stick_cursor > 0:
                 stick_pixels[stick_cursor] = OFF
@@ -163,17 +165,18 @@ while True:
 
         # reset if the cursor is over the max
         if stick_cursor > stick_max:
-            ring_pixels[ring_cursor_off] = BLUE  # spark when we hit max
+            ring_pixels[ring_cursor_off] = WHITE  # spark when we hit max
             stick_max_previous = stick_max
             stick_max = random.randrange(0, stick_pixel_max)
             stick_cursor = 0
             stick_pixels.fill(OFF)
 
+        # turn on the appropriate pixels
         stick_pixels[stick_cursor] = BLUE
         stick_pixels[stick_max_previous] = GREEN
         stick_cursor += 1
 
-    # check select button
+    # increment cyclotron color if select button is tapped
     select_button.update()
     if select_button.fell:
         ring_color_index = (ring_color_index + 1) % len(ring_on_color)
