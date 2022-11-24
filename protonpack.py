@@ -28,8 +28,9 @@ trigger_input_pin = board.GP26
 select_input_pin = board.GP22
 
 # Pixel brightness
-neopixel_stick_brightness: float = 0.02  # 0.008 is the dimmest I can make the stick
-neopixel_ring_brightness: float = 0.3  # 0.008 is the dimmest I can make them
+neopixel_stick_brightness: float = 0.3  # 0.008 is the dimmest I can make the stick
+neopixel_ring_brightness: float = 0.5  # 0.008 is the dimmest I can make them
+brightness_levels = (0.25, 0.3, 0.15)  # balance the colors better so white doesn't appear blue-tinged
 
 # How fast should the neopixel cycle?
 # This is (similar to) microseconds per increment so: Higher is slower
@@ -41,6 +42,12 @@ change_speed: int = 30  # How often should we change speed?
 # how many LEDs should the ring light at one time?
 ring_cursor_width: int = 3
 
+#
+###################################################################
+# No config beyond this point
+###################################################################
+#
+
 # Print startup info
 print(f"-=< protonpack v{protonpack_version} - https://github.com/algrym/protonpack/ >=-")
 print(f" - uname: {os.uname()}")
@@ -50,13 +57,14 @@ print(f" - Adafruit fancyled v{fancyled.__version__}")
 print(f" - Adafruit debounce v{Debouncer}")
 
 # Color constants
-RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0))
-ORANGE = fancyled.gamma_adjust(fancyled.CRGB(255, 165, 0))
-YELLOW = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 0))
-GREEN = fancyled.gamma_adjust(fancyled.CRGB(0, 255, 0))
-BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255))
-PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128))
-WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255))
+RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0), brightness=brightness_levels).pack()
+ORANGE = fancyled.gamma_adjust(fancyled.CRGB(255, 165, 0), brightness=brightness_levels).pack()
+YELLOW = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 0), brightness=brightness_levels).pack()
+GREEN = fancyled.gamma_adjust(fancyled.CRGB(0, 255, 0), brightness=brightness_levels).pack()
+BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255),
+                             brightness=brightness_levels).pack()  # Sadly gamma eats this color :(
+PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128), brightness=brightness_levels).pack()
+WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
 OFF = (0, 0, 0)
 
 ring_on_color = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
@@ -86,8 +94,10 @@ select_button = Debouncer(select_button_pin)
 
 
 # callback to turn everything off on exit
+
+
 def all_off():
-    print("Exiting: all pixels off.")
+    print(' - Exiting: all pixels off.')
     stick_pixels.fill(OFF)
     ring_pixels.fill(OFF)
     sys.exit(0)
@@ -103,23 +113,9 @@ stick_pixel_max = 1
 stick_clock_next = ring_clock_next = adjust_clock_next = 0
 
 # main driver loop
+print(' - Entering main event loop.')
 while True:
     clock = supervisor.ticks_ms()
-
-    # check trigger button
-    trigger_button.update()
-    if trigger_button.rose:
-        ring_pixels.fill(WHITE)
-        print(f" - Trigger   up at {clock}")
-    elif trigger_button.fell:
-        ring_pixels.fill(OFF)
-        print(f" - Trigger down at {clock}")
-
-    # check select button
-    select_button.update()
-    if select_button.fell:
-        ring_color_index = (ring_color_index + 1) % len(ring_on_color)
-        print(f" - Ring color set to {ring_on_color[ring_color_index]}")
 
     # increment speeds
     if clock > adjust_clock_next:
@@ -135,18 +131,30 @@ while True:
             neopixel_ring_speed_current -= 1
             ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
 
-    # increment the ring
-    if clock > ring_clock_next:
-        # Calculate time of next ring update
-        ring_clock_next = clock + neopixel_ring_speed_current
 
-        # turn on the appropriate pixels
-        ring_pixels[ring_cursor_on] = ring_on_color[ring_color_index]
-        ring_pixels[ring_cursor_off] = OFF
+    # check trigger button
+    trigger_button.update()
+    if trigger_button.rose:  # Handle releasing the button
+        ring_pixels.fill(OFF)
+        print(f" - Trigger {trigger_button.value} rose at {clock}")
+    elif trigger_button.fell:  # Handle trigger up
+        ring_pixels.fill(WHITE)
+        print(f" - Trigger {trigger_button.value} fell at {clock}")
 
-        # increment cursors
-        ring_cursor_off = (ring_cursor_on - ring_cursor_width) % len(ring_pixels)
-        ring_cursor_on = (ring_cursor_on + 1) % len(ring_pixels)
+    if not trigger_button.value:
+        # Trigger down: flash the cyclotron!
+        if (clock % 5) == 0:
+            ring_pixels.fill(ring_on_color[random.randrange(0, len(ring_on_color))])
+        else:
+            ring_pixels.fill(OFF)
+
+        # Trigger down: decrement the power
+        if (clock % 150) == 0:
+            if stick_cursor > 0:
+                stick_pixels[stick_cursor] = OFF
+                stick_pixels[stick_max_previous] = GREEN
+                stick_cursor -= 1
+        continue  # Skip the ring and stick updates if the trigger is down
 
     # increment the power cell
     if clock > stick_clock_next:
@@ -165,4 +173,21 @@ while True:
         stick_pixels[stick_max_previous] = GREEN
         stick_cursor += 1
 
-    pass
+    # check select button
+    select_button.update()
+    if select_button.fell:
+        ring_color_index = (ring_color_index + 1) % len(ring_on_color)
+        print(f" - Ring color set to {ring_on_color[ring_color_index]}")
+
+    # increment the ring
+    if clock > ring_clock_next:
+        # Calculate time of next ring update
+        ring_clock_next = clock + neopixel_ring_speed_current
+
+        # turn on the appropriate pixels
+        ring_pixels[ring_cursor_on] = ring_on_color[ring_color_index]
+        ring_pixels[ring_cursor_off] = OFF
+
+        # increment cursors
+        ring_cursor_off = (ring_cursor_on - ring_cursor_width) % len(ring_pixels)
+        ring_cursor_on = (ring_cursor_on + 1) % len(ring_pixels)
