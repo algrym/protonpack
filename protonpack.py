@@ -3,8 +3,11 @@ import atexit
 import os
 import random
 import sys
+import time
 
 import adafruit_fancyled.adafruit_fancyled as fancyled
+import audiomp3
+import audiopwmio
 import board
 import digitalio
 import neopixel
@@ -12,7 +15,7 @@ import supervisor
 from adafruit_debouncer import Debouncer
 
 # Software version
-protonpack_version: str = '0.9'
+protonpack_version: str = '0.0.10'
 
 # Update this to match the number of NeoPixel LEDs connected to your boards
 neopixel_stick_num_pixels: int = 20
@@ -26,6 +29,9 @@ neopixel_ring_pin = board.GP28
 # Input pin numbers
 trigger_input_pin = board.GP26
 select_input_pin = board.GP22
+
+# Audio data out pin
+audio_out_pin = board.GP21
 
 # Pixel brightness
 neopixel_stick_brightness: float = 0.3  # 0.008 is the dimmest I can make the stick
@@ -41,6 +47,9 @@ change_speed: int = 30  # How often should we change speed?
 
 # how many LEDs should the ring light at one time?
 ring_cursor_width: int = 3
+
+# Startup sound MP3 path
+startup_mp3_filename = 'KJH_PackstartCombo.mp3'
 
 #
 ###################################################################
@@ -91,6 +100,12 @@ select_button_pin.direction = digitalio.Direction.INPUT
 select_button_pin.pull = digitalio.Pull.UP
 select_button = Debouncer(select_button_pin)
 
+print(f" - Audio out on {audio_out_pin}")
+audio = audiopwmio.PWMAudioOut(audio_out_pin)
+
+print(f" - Loading startup MP3: {startup_mp3_filename}")
+decoder = audiomp3.MP3Decoder(startup_mp3_filename)
+
 
 def all_off():
     # callback to turn everything off on exit
@@ -108,6 +123,9 @@ ring_cursor_on = ring_cursor_off = ring_color_index = 0
 stick_cursor = stick_max_previous = stick_max = 0
 stick_pixel_max = 1
 stick_clock_next = ring_clock_next = adjust_clock_next = 0
+
+print(f" - Playing {decoder.file}")
+audio.play(decoder)
 
 # main driver loop
 print(' - Entering main event loop.')
@@ -194,3 +212,5 @@ while True:
         # increment cursors
         ring_cursor_off = (ring_cursor_on - ring_cursor_width) % len(ring_pixels)
         ring_cursor_on = (ring_cursor_on + 1) % len(ring_pixels)
+
+    time.sleep(0.001)
