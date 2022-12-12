@@ -49,7 +49,7 @@ change_speed: int = 30  # How often should we change speed?
 ring_cursor_width: int = 3
 
 # Startup sound MP3 path
-startup_mp3_filename = 'KJH_PackstartCombo.mp3'
+startup_mp3_filename = 'lib/KJH_PackstartCombo.mp3'
 
 #
 ###################################################################
@@ -104,7 +104,7 @@ print(f" - Audio out on {audio_out_pin}")
 audio = audiopwmio.PWMAudioOut(audio_out_pin)
 
 print(f" - Loading startup MP3: {startup_mp3_filename}")
-decoder = audiomp3.MP3Decoder(startup_mp3_filename)
+decoder = audiomp3.MP3Decoder(open(startup_mp3_filename, 'rb'))
 
 
 def all_off():
