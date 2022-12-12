@@ -24,10 +24,15 @@ test: venv
 	curl https://www.toptal.com/developers/gitignore/api/python,circuitpython,git,virtualenv,macos,vim,pycharm -o .gitignore
 	printf "\n# Also ignore the downloads directory\ndownloads\n" >> .gitignore
 	printf "\n# Also ignore .idea/ directory\n.idea/\n" >> .gitignore
+	printf "\n# Also ignore .mp3 files\n*.mp3\n" >> .gitignore
 
 downloads: \
 	downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2 \
-	downloads/adafruit-circuitpython-bundle-7.x-mpy-20221007.zip
+	downloads/adafruit-circuitpython-bundle-7.x-mpy-20221007.zip \
+	KJH_PackstartCombo.mp3
+
+KJH_PackstartCombo.mp3:
+	curl -LO http://hprops.com/sounds/KJH_PackstartCombo.mp3
 
 downloads/adafruit-circuitpython-bundle-7.x-mpy-20221007.zip:
 	test -d downloads || mkdir downloads
