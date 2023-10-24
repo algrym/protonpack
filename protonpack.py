@@ -185,7 +185,7 @@ while True:
         if stick_cursor > stick_max:
             ring_pixels[ring_cursor_off] = WHITE  # spark when we hit max
             stick_max_previous = stick_max
-            stick_max = random.randrange(0, stick_pixel_max)
+            stick_max = random.randrange(0, stick_pixel_max - 1)
             stick_cursor = 0
             stick_pixels.fill(OFF)
 
