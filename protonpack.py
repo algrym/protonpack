@@ -60,10 +60,12 @@ startup_mp3_filename = 'lib/KJH_PackstartCombo.mp3'
 # Print startup info
 print(f"-=< protonpack v{protonpack_version} - https://github.com/algrym/protonpack/ >=-")
 print(f" - uname: {os.uname()}")
+print(f" - cpu uid: {microcontroller.cpu.uid}")
+print(f" -- freq: {microcontroller.cpu.frequency / 1e6} MHz")
+print(f" -- reset reason: {microcontroller.cpu.reset_reason}")
+print(f" -- nvm: {len(microcontroller.nvm)} bytes")
 print(f" - python v{sys.version}")
-print(f" - neopixel v{neopixel.__version__}")
 print(f" - Adafruit fancyled v{fancyled.__version__}")
-print(f" - Adafruit debounce v{Debouncer}")
 
 # Color constants
 RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0), brightness=brightness_levels).pack()
@@ -78,16 +80,18 @@ OFF = (0, 0, 0)
 ring_on_color = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
 
 # initialize neopixels
-print(f" - NeoPixel stick size {neopixel_stick_num_pixels} on {neopixel_stick_pin}")
+print(f" - neopixel v{neopixel.__version__}")
+print(f"   - NeoPixel stick size {neopixel_stick_num_pixels} on {neopixel_stick_pin}")
 stick_pixels = neopixel.NeoPixel(neopixel_stick_pin,
                                  neopixel_stick_num_pixels,
                                  brightness=neopixel_stick_brightness)
-print(f" - NeoPixel ring  size {neopixel_ring_num_pixels} on {neopixel_ring_pin}")
+print(f"   - NeoPixel ring  size {neopixel_ring_num_pixels} on {neopixel_ring_pin}")
 ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
                                 neopixel_ring_num_pixels,
                                 brightness=neopixel_ring_brightness)
 
 # initialize buttons
+print(f" - Adafruit debounce v{Debouncer}")
 print(f" - Input trigger on {trigger_input_pin}")
 trigger_button_pin = digitalio.DigitalInOut(trigger_input_pin)
 trigger_button_pin.direction = digitalio.Direction.INPUT
