@@ -112,7 +112,7 @@ def all_off():
     print(' - Exiting: all pixels off.')
     stick_pixels.fill(OFF)
     ring_pixels.fill(OFF)
-    sys.exit(0)
+    supervisor.reload()
 
 
 # turn everything off on exit
