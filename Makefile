@@ -4,7 +4,7 @@ CIRCUIT_PYTHON_DIR=/Volumes/CIRCUITPY
 CIRCUIT_PYTHON_VER=8.2.7
 CIRCUIT_PYTHON_LIB_VER=8.x
 CIRCUIT_PYTHON_LIB_DATE=20231024
-CODEPY_PATH=$(CIRCUIT_PYTHON_DIR)/code.py
+CODEPY_DIR=$(CIRCUIT_PYTHON_DIR)/
 CODEPY_LIB_DIR=$(CIRCUIT_PYTHON_DIR)/lib
 
 # These shouldn't need changing, but eh ...
@@ -20,8 +20,8 @@ venv/touchfile: requirements.txt
 	. venv/bin/activate; pip install -Ur requirements.txt
 	touch venv/touchfile
 
-version.py: protonpack.py
-	date -r protonpack.py "+__version__ = %'%Y-%m-%d %H:%M:%S%'" > version.py
+version.py: code.py
+	date -r code.py "+__version__ = %'%Y-%m-%d %H:%M:%S%'" > version.py
 
 test: venv
 	. venv/bin/activate; nosetests project/test
@@ -54,8 +54,9 @@ install_circuit_python: downloads/adafruit-circuitpython-raspberry_pi_pico-en_US
 	cp downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-$(CIRCUIT_PYTHON_VER).uf2 $(UF2_DIR)/
 
 install: all
-	cp version.py $(CIRCUIT_PYTHON_DIR)
-	cp protonpack.py $(CODEPY_PATH)
+	rsync -avlcC \
+		version.py code.py \
+			$(CODEPY_DIR)
 	rsync -avlcC \
 		KJH_PackstartCombo.mp3 \
 		downloads/adafruit-circuitpython-bundle-$(CIRCUIT_PYTHON_LIB_VER)-mpy-$(CIRCUIT_PYTHON_LIB_DATE)/lib/neopixel* \
