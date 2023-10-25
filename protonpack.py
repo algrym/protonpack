@@ -14,8 +14,10 @@ import neopixel
 import supervisor
 from adafruit_debouncer import Debouncer
 
+import version
+
 # Software version
-protonpack_version: str = '0.0.10'
+protonpack_version: str = version.__version__
 
 # Update this to match the number of NeoPixel LEDs connected to your boards
 neopixel_stick_num_pixels: int = 20

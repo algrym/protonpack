@@ -10,7 +10,7 @@ CODEPY_LIB_DIR=$(CIRCUIT_PYTHON_DIR)/lib
 # These shouldn't need changing, but eh ...
 CURLFLAGS="--location"
 
-all: venv downloads .gitignore
+all: venv downloads .gitignore version.py
 
 venv: venv/touchfile
 
@@ -20,14 +20,18 @@ venv/touchfile: requirements.txt
 	. venv/bin/activate; pip install -Ur requirements.txt
 	touch venv/touchfile
 
+version.py: protonpack.py
+	date -r protonpack.py "+__version__ = %'%Y-%m-%d %H:%M:%S%'" > version.py
+
 test: venv
 	. venv/bin/activate; nosetests project/test
 
 .gitignore:
 	curl https://www.toptal.com/developers/gitignore/api/python,circuitpython,git,virtualenv,macos,vim,pycharm -o .gitignore
-	printf "\n# Also ignore the downloads directory\ndownloads\n" >> .gitignore
-	printf "\n# Also ignore .idea/ directory\n.idea/\n" >> .gitignore
-	printf "\n# Also ignore .mp3 files\n*.mp3\n" >> .gitignore
+	printf "\n# ignore the downloads directory\ndownloads\n" >> .gitignore
+	printf "\n# ignore .idea/ directory\n.idea/\n" >> .gitignore
+	printf "\n# ignore mp3 files\n*.mp3\n" >> .gitignore
+	printf "\n# ignore version.py that updates each install\nversion.py\n" >> .gitignore
 
 downloads: \
 	downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-$(CIRCUIT_PYTHON_VER).uf2 \
@@ -50,6 +54,7 @@ install_circuit_python: downloads/adafruit-circuitpython-raspberry_pi_pico-en_US
 	cp downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2 $(UF2_DIR)/
 
 install: all
+	cp version.py $(CIRCUIT_PYTHON_DIR)
 	cp protonpack.py $(CODEPY_PATH)
 	rsync -avlC \
 		KJH_PackstartCombo.mp3 \

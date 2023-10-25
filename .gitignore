@@ -332,6 +332,11 @@ cython_debug/
 # Poetry local configuration file - https://python-poetry.org/docs/configuration/#local-configuration
 poetry.toml
 
+# ruff
+.ruff_cache/
+
+# LSP config files
+pyrightconfig.json
 
 ### Vim ###
 # Swap
@@ -368,11 +373,14 @@ pip-selfcheck.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,circuitpython,git,virtualenv,macos,vim,pycharm
 
-# Also ignore the downloads directory
+# ignore the downloads directory
 downloads
 
-# Also ignore .idea/ directory
+# ignore .idea/ directory
 .idea/
 
-# Also ignore .mp3 files
+# ignore mp3 files
 *.mp3
+
+# ignore version.py that updates each install
+version.py
