@@ -50,8 +50,8 @@ downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-$(CIRCUIT_PYTHON_VER).u
 	test -d downloads || mkdir downloads
 	curl $(CURLFLAGS) https://downloads.circuitpython.org/bin/raspberry_pi_pico/en_US/adafruit-circuitpython-raspberry_pi_pico-en_US-$(CIRCUIT_PYTHON_VER).uf2 -o $(@)
 
-install_circuit_python: downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2
-	cp downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-7.3.3.uf2 $(UF2_DIR)/
+install_circuit_python: downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-$(CIRCUIT_PYTHON_VER).uf2
+	cp downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-$(CIRCUIT_PYTHON_VER).uf2 $(UF2_DIR)/
 
 install: all
 	cp version.py $(CIRCUIT_PYTHON_DIR)
