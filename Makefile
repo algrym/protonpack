@@ -56,7 +56,7 @@ install_circuit_python: downloads/adafruit-circuitpython-raspberry_pi_pico-en_US
 install: all
 	cp version.py $(CIRCUIT_PYTHON_DIR)
 	cp protonpack.py $(CODEPY_PATH)
-	rsync -avlC \
+	rsync -avlcC \
 		KJH_PackstartCombo.mp3 \
 		downloads/adafruit-circuitpython-bundle-$(CIRCUIT_PYTHON_LIB_VER)-mpy-$(CIRCUIT_PYTHON_LIB_DATE)/lib/neopixel* \
 		downloads/adafruit-circuitpython-bundle-$(CIRCUIT_PYTHON_LIB_VER)-mpy-$(CIRCUIT_PYTHON_LIB_DATE)/lib/*ticks* \

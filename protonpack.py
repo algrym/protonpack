@@ -12,6 +12,7 @@ import board
 import digitalio
 import neopixel
 import supervisor
+import microcontroller
 from adafruit_debouncer import Debouncer
 
 import version
@@ -94,13 +95,13 @@ ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
 
 # initialize buttons
 print(f" - Adafruit debounce v{Debouncer}")
-print(f" - Input trigger on {trigger_input_pin}")
+print(f"   - Input trigger on {trigger_input_pin}")
 trigger_button_pin = digitalio.DigitalInOut(trigger_input_pin)
 trigger_button_pin.direction = digitalio.Direction.INPUT
 trigger_button_pin.pull = digitalio.Pull.UP
 trigger_button = Debouncer(trigger_button_pin)
 
-print(f" - Input select on {select_input_pin}")
+print(f"   - Input select on {select_input_pin}")
 select_button_pin = digitalio.DigitalInOut(select_input_pin)
 select_button_pin.direction = digitalio.Direction.INPUT
 select_button_pin.pull = digitalio.Pull.UP
