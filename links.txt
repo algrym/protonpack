@@ -15,3 +15,6 @@ https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel
 
 Awesome CircuitPython
 https://github.com/adafruit/awesome-circuitpython
+
+Adafruit: Illuminated Toggle Switch with Cover
+https://www.adafruit.com/product/3219
