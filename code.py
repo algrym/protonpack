@@ -37,8 +37,8 @@ select_input_pin = board.GP22
 audio_out_pin = board.GP21
 
 # Pixel brightness
-neopixel_stick_brightness: float = 0.3  # 0.008 is the dimmest I can make the stick
-neopixel_ring_brightness: float = 0.5  # 0.008 is the dimmest I can make them
+neopixel_stick_brightness: float = 0.5  # 0.008 is the dimmest I can make the stick
+neopixel_ring_brightness: float = 0.7  # 0.008 is the dimmest I can make them
 brightness_levels = (0.25, 0.3, 0.15)  # balance the colors better so white doesn't appear blue-tinged
 
 # How fast should the neopixel cycle?
@@ -83,11 +83,13 @@ OFF = (0, 0, 0)
 ring_on_color = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
 
 # initialize neopixels
+#   Note: you may need to change pixel_order if you have an RGB, RGBW, GRBW, etc.
 print(f" - neopixel v{neopixel.__version__}")
 print(f"   - NeoPixel stick size {neopixel_stick_num_pixels} on {neopixel_stick_pin}")
 stick_pixels = neopixel.NeoPixel(neopixel_stick_pin,
                                  neopixel_stick_num_pixels,
-                                 brightness=neopixel_stick_brightness)
+                                 brightness=neopixel_stick_brightness,
+                                 pixel_order=neopixel.GRBW)
 print(f"   - NeoPixel ring  size {neopixel_ring_num_pixels} on {neopixel_ring_pin}")
 ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
                                 neopixel_ring_num_pixels,
