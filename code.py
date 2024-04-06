@@ -209,14 +209,9 @@ while True:
     # modify color as rotary encoder is turned
     rotary_encoder_current_position = rotary_encoder.position
     if rotary_encoder_last_position is None or rotary_encoder_current_position != rotary_encoder_last_position:
-        print(f"  encoder: {rotary_encoder_current_position}")
+        ring_color_index = rotary_encoder_current_position % len(ring_on_color)
+        print(f" - Ring color set to {ring_on_color[ring_color_index]} from encoder {rotary_encoder_current_position}")
     rotary_encoder_last_position = rotary_encoder_current_position
-
-    # increment cyclotron color if select button is tapped
-    # select_button.update()
-    # if select_button.fell:
-    #     ring_color_index = (ring_color_index + 1) % len(ring_on_color)
-    #     print(f" - Ring color set to {ring_on_color[ring_color_index]}")
 
     # increment the ring
     if clock > ring_clock_next:
