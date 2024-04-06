@@ -97,13 +97,19 @@ ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
                                 neopixel_ring_num_pixels,
                                 brightness=neopixel_ring_brightness)
 
-# initialize buttons
+# initialize rotary encoder button
 print(f" - Adafruit debounce v{Debouncer}")
 print(f"   - Rotary encoder button on {rotary_encoder_button_pin}")
 rotary_encoder_button_input = digitalio.DigitalInOut(rotary_encoder_button_pin)
 rotary_encoder_button_input.direction = digitalio.Direction.INPUT
 rotary_encoder_button_input.pull = digitalio.Pull.UP
 rotary_encoder_button = Debouncer(rotary_encoder_button_input)
+
+# initialize rotary encoder
+print(f"   - Rotary encoder clock on {rotary_encoder_clock_pin}")
+print(f"   - Rotary encoder    dt on {rotary_encoder_dt_pin}")
+rotary_encoder = rotaryio.IncrementalEncoder(rotary_encoder_clock_pin,
+                                             rotary_encoder_dt_pin)
 
 print(f" - Audio out on {audio_out_pin}")
 audio = audiopwmio.PWMAudioOut(audio_out_pin)
@@ -128,6 +134,7 @@ ring_cursor_on = ring_cursor_off = ring_color_index = 0
 stick_cursor = stick_max_previous = stick_max = 0
 stick_pixel_max = 1
 stick_clock_next = ring_clock_next = adjust_clock_next = 0
+rotary_encoder_last_position = None
 
 print(f" - Playing {decoder.file}")
 audio.play(decoder)
@@ -198,6 +205,12 @@ while True:
         stick_pixels[stick_cursor] = BLUE
         stick_pixels[stick_max_previous] = GREEN
         stick_cursor += 1
+
+    # modify color as rotary encoder is turned
+    rotary_encoder_current_position = rotary_encoder.position
+    if rotary_encoder_last_position is None or rotary_encoder_current_position != rotary_encoder_last_position:
+        print(f"  encoder: {rotary_encoder_current_position}")
+    rotary_encoder_last_position = rotary_encoder_current_position
 
     # increment cyclotron color if select button is tapped
     # select_button.update()
