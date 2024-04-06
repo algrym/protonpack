@@ -5,17 +5,18 @@ import random
 import sys
 import time
 
-import adafruit_fancyled.adafruit_fancyled as fancyled
 import audiomp3
 import audiopwmio
+import supervisor
+
+import adafruit_fancyled.adafruit_fancyled as fancyled
 import board
 import digitalio
-import neopixel
-import supervisor
 import microcontroller
-from adafruit_debouncer import Debouncer
-
+import neopixel
+import rotaryio
 import version
+from adafruit_debouncer import Debouncer
 
 # Software version
 protonpack_version: str = version.__version__
@@ -29,12 +30,13 @@ neopixel_ring_num_pixels: int = 60
 neopixel_stick_pin = board.GP27
 neopixel_ring_pin = board.GP28
 
-# Input pin numbers
-trigger_input_pin = board.GP26
-select_input_pin = board.GP22
-
 # Audio data out pin
 audio_out_pin = board.GP21
+
+# Rotary encoder pins
+rotary_encoder_button_pin = board.GP10
+rotary_encoder_dt_pin = board.GP11
+rotary_encoder_clock_pin = board.GP12
 
 # Pixel brightness
 neopixel_stick_brightness: float = 0.5  # 0.008 is the dimmest I can make the stick
@@ -97,17 +99,11 @@ ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
 
 # initialize buttons
 print(f" - Adafruit debounce v{Debouncer}")
-print(f"   - Input trigger on {trigger_input_pin}")
-trigger_button_pin = digitalio.DigitalInOut(trigger_input_pin)
-trigger_button_pin.direction = digitalio.Direction.INPUT
-trigger_button_pin.pull = digitalio.Pull.UP
-trigger_button = Debouncer(trigger_button_pin)
-
-print(f"   - Input select on {select_input_pin}")
-select_button_pin = digitalio.DigitalInOut(select_input_pin)
-select_button_pin.direction = digitalio.Direction.INPUT
-select_button_pin.pull = digitalio.Pull.UP
-select_button = Debouncer(select_button_pin)
+print(f"   - Rotary encoder button on {rotary_encoder_button_pin}")
+rotary_encoder_button_input = digitalio.DigitalInOut(rotary_encoder_button_pin)
+rotary_encoder_button_input.direction = digitalio.Direction.INPUT
+rotary_encoder_button_input.pull = digitalio.Pull.UP
+rotary_encoder_button = Debouncer(rotary_encoder_button_input)
 
 print(f" - Audio out on {audio_out_pin}")
 audio = audiopwmio.PWMAudioOut(audio_out_pin)
@@ -157,15 +153,15 @@ while True:
 
     # check trigger button
     #   trigger/release/value are inverted from what I'd expect
-    trigger_button.update()
-    if trigger_button.rose:  # Handle trigger release
+    rotary_encoder_button.update()
+    if rotary_encoder_button.rose:  # Handle trigger release
         ring_pixels.fill(OFF)
         print(f"   - Trigger rose at {clock}")
-    elif trigger_button.fell:  # Handle trigger engage
+    elif rotary_encoder_button.fell:  # Handle trigger engage
         ring_pixels.fill(WHITE)
         print(f"   - Trigger fell at {clock}")
 
-    if not trigger_button.value:
+    if not rotary_encoder_button.value:
         # Trigger active: flash the cyclotron!
         flash_random = random.randrange(0, 20)
         if flash_random < 3:
@@ -204,10 +200,10 @@ while True:
         stick_cursor += 1
 
     # increment cyclotron color if select button is tapped
-    select_button.update()
-    if select_button.fell:
-        ring_color_index = (ring_color_index + 1) % len(ring_on_color)
-        print(f" - Ring color set to {ring_on_color[ring_color_index]}")
+    # select_button.update()
+    # if select_button.fell:
+    #     ring_color_index = (ring_color_index + 1) % len(ring_on_color)
+    #     print(f" - Ring color set to {ring_on_color[ring_color_index]}")
 
     # increment the ring
     if clock > ring_clock_next:
