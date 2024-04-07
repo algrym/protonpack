@@ -134,6 +134,7 @@ def main_event_loop():
 
     # localize the globals to speed things up
     global stick_pixels
+    global ring_pixels
 
     # set up main driver loop
     ring_cursor_on = ring_cursor_off = ring_color_index = 0
