@@ -43,12 +43,7 @@ neopixel_stick_brightness: float = 0.5  # 0.008 is the dimmest I can make the st
 neopixel_ring_brightness: float = 0.7  # 0.008 is the dimmest I can make them
 brightness_levels = (0.25, 0.3, 0.15)  # balance the colors better so white doesn't appear blue-tinged
 
-# How fast should the neopixel cycle?
-# This is (similar to) microseconds per increment so: Higher is slower
-neopixel_stick_speed: int = 20
-neopixel_ring_speed_current: int = 80  # Start this high to emulate spin-up
-neopixel_ring_speed_cruise: int = 10
-change_speed: int = 30  # How often should we change speed?
+
 
 # how many LEDs should the ring light at one time?
 ring_cursor_width: int = 3
@@ -129,10 +124,17 @@ def all_off():
 # turn everything off on exit
 atexit.register(all_off)
 
-if __name__ == "__main__":
-    main_event_loop()
-
 def main_event_loop():
+    # How fast should the neopixel cycle?
+    # This is (similar to) microseconds per increment so: Higher is slower
+    neopixel_stick_speed: int = 20
+    neopixel_ring_speed_current: int = 80  # Start this high to emulate spin-up
+    neopixel_ring_speed_cruise: int = 10
+    change_speed: int = 30  # How often should we change speed?
+
+    # localize the globals to speed things up
+    global stick_pixels
+
     # set up main driver loop
     ring_cursor_on = ring_cursor_off = ring_color_index = 0
     stick_cursor = stick_max_previous = stick_max = 0
@@ -246,3 +248,6 @@ def main_event_loop():
             ring_cursor_on = (ring_cursor_on + 1) % len(ring_pixels)
 
         time.sleep(0.001)
+
+if __name__ == "__main__":
+    main_event_loop()
