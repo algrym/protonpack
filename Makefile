@@ -15,7 +15,7 @@ all: venv downloads .gitignore version.py
 venv: venv/touchfile
 
 venv/touchfile: requirements.txt
-	test -d venv || virtualenv venv
+	test -d venv || python3 -m venv venv
 	. venv/bin/activate; pip install --upgrade pip
 	. venv/bin/activate; pip install -Ur requirements.txt
 	touch venv/touchfile
