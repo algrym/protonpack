@@ -43,8 +43,6 @@ neopixel_stick_brightness: float = 0.5  # 0.008 is the dimmest I can make the st
 neopixel_ring_brightness: float = 0.7  # 0.008 is the dimmest I can make them
 brightness_levels = (0.25, 0.3, 0.15)  # balance the colors better so white doesn't appear blue-tinged
 
-
-
 # how many LEDs should the ring light at one time?
 ring_cursor_width: int = 3
 
@@ -57,74 +55,50 @@ startup_mp3_filename = 'lib/KJH_PackstartCombo.mp3'
 ###################################################################
 #
 
-# Print startup info
-print(f"-=< protonpack v{protonpack_version} - https://github.com/algrym/protonpack/ >=-")
-print(f" - uname: {os.uname()}")
-print(f" - cpu uid: {microcontroller.cpu.uid}")
-print(f" -- freq: {microcontroller.cpu.frequency / 1e6} MHz")
-print(f" -- reset reason: {microcontroller.cpu.reset_reason}")
-print(f" -- nvm: {len(microcontroller.nvm)} bytes")
-print(f" - python v{sys.version}")
-print(f" - Adafruit fancyled v{fancyled.__version__}")
-
-# Color constants
-RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0), brightness=brightness_levels).pack()
-ORANGE = fancyled.gamma_adjust(fancyled.CRGB(255, 165, 0), brightness=brightness_levels).pack()
-YELLOW = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 0), brightness=brightness_levels).pack()
-GREEN = fancyled.gamma_adjust(fancyled.CRGB(0, 255, 0), brightness=brightness_levels).pack()
-BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255), brightness=brightness_levels).pack()
-PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128), brightness=brightness_levels).pack()
-WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
-OFF = (0, 0, 0)
-
-ring_on_color = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
-
-# initialize neopixels
-#   Note: you may need to change pixel_order if you have an RGB, RGBW, GRBW, etc.
-print(f" - neopixel v{neopixel.__version__}")
-print(f"   - NeoPixel stick size {neopixel_stick_num_pixels} on {neopixel_stick_pin}")
-stick_pixels = neopixel.NeoPixel(neopixel_stick_pin,
-                                 neopixel_stick_num_pixels,
-                                 brightness=neopixel_stick_brightness,
-                                 pixel_order=neopixel.GRBW)
-print(f"   - NeoPixel ring  size {neopixel_ring_num_pixels} on {neopixel_ring_pin}")
-ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
-                                neopixel_ring_num_pixels,
-                                brightness=neopixel_ring_brightness)
-
-# initialize rotary encoder button
-print(f" - Adafruit debounce v{Debouncer}")
-print(f"   - Rotary encoder button on {rotary_encoder_button_pin}")
-rotary_encoder_button_input = digitalio.DigitalInOut(rotary_encoder_button_pin)
-rotary_encoder_button_input.direction = digitalio.Direction.INPUT
-rotary_encoder_button_input.pull = digitalio.Pull.UP
-rotary_encoder_button = Debouncer(rotary_encoder_button_input)
-
-# initialize rotary encoder
-print(f"   - Rotary encoder clock on {rotary_encoder_clock_pin}")
-print(f"   - Rotary encoder    dt on {rotary_encoder_dt_pin}")
-rotary_encoder = rotaryio.IncrementalEncoder(rotary_encoder_clock_pin,
-                                             rotary_encoder_dt_pin)
-
-print(f" - Audio out on {audio_out_pin}")
-audio = audiopwmio.PWMAudioOut(audio_out_pin)
-
-print(f" - Loading startup MP3: {startup_mp3_filename}")
-decoder = audiomp3.MP3Decoder(open(startup_mp3_filename, 'rb'))
-
-
-def all_off():
-    # callback to turn everything off on exit
-    print(' - Exiting: all pixels off.')
-    stick_pixels.fill(OFF)
-    ring_pixels.fill(OFF)
-    supervisor.reload()
-
-
-# turn everything off on exit
-atexit.register(all_off)
-
 def main_event_loop():
+    # Print startup info
+    print(f"-=< protonpack v{protonpack_version} - https://github.com/algrym/protonpack/ >=-")
+    print(f" - uname: {os.uname()}")
+    print(f" - cpu uid: {microcontroller.cpu.uid}")
+    print(f" -- freq: {microcontroller.cpu.frequency / 1e6} MHz")
+    print(f" -- reset reason: {microcontroller.cpu.reset_reason}")
+    print(f" -- nvm: {len(microcontroller.nvm)} bytes")
+    print(f" - python v{sys.version}")
+    print(f" - Adafruit fancyled v{fancyled.__version__}")
+
+    # initialize neopixels
+    #   Note: you may need to change pixel_order if you have an RGB, RGBW, GRBW, etc.
+    print(f" - neopixel v{neopixel.__version__}")
+    print(f"   - NeoPixel stick size {neopixel_stick_num_pixels} on {neopixel_stick_pin}")
+    stick_pixels = neopixel.NeoPixel(neopixel_stick_pin,
+                                     neopixel_stick_num_pixels,
+                                     brightness=neopixel_stick_brightness,
+                                     pixel_order=neopixel.GRBW)
+    print(f"   - NeoPixel ring  size {neopixel_ring_num_pixels} on {neopixel_ring_pin}")
+    ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
+                                    neopixel_ring_num_pixels,
+                                    brightness=neopixel_ring_brightness)
+
+    # initialize rotary encoder button
+    print(" - Rotary encoder:")
+    print(f"   - button on {rotary_encoder_button_pin}")
+    rotary_encoder_button_input = digitalio.DigitalInOut(rotary_encoder_button_pin)
+    rotary_encoder_button_input.direction = digitalio.Direction.INPUT
+    rotary_encoder_button_input.pull = digitalio.Pull.UP
+    rotary_encoder_button = Debouncer(rotary_encoder_button_input)
+
+    # initialize rotary encoder
+    print(f"   -  clock on {rotary_encoder_clock_pin}")
+    print(f"   -     dt on {rotary_encoder_dt_pin}")
+    rotary_encoder = rotaryio.IncrementalEncoder(rotary_encoder_clock_pin,
+                                                 rotary_encoder_dt_pin)
+
+    print(f" - Audio out on {audio_out_pin}")
+    audio = audiopwmio.PWMAudioOut(audio_out_pin)
+
+    print(f" - Loading startup MP3: {startup_mp3_filename}")
+    decoder = audiomp3.MP3Decoder(open(startup_mp3_filename, 'rb'))
+
     # How fast should the neopixel cycle?
     # This is (similar to) microseconds per increment so: Higher is slower
     neopixel_stick_speed: int = 20
@@ -132,11 +106,19 @@ def main_event_loop():
     neopixel_ring_speed_cruise: int = 10
     change_speed: int = 30  # How often should we change speed?
 
-    # localize the globals to speed things up
-    global stick_pixels
-    global ring_pixels
+    # Color constants
+    RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0), brightness=brightness_levels).pack()
+    ORANGE = fancyled.gamma_adjust(fancyled.CRGB(255, 165, 0), brightness=brightness_levels).pack()
+    YELLOW = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 0), brightness=brightness_levels).pack()
+    GREEN = fancyled.gamma_adjust(fancyled.CRGB(0, 255, 0), brightness=brightness_levels).pack()
+    BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255), brightness=brightness_levels).pack()
+    PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128), brightness=brightness_levels).pack()
+    WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
+    OFF = (0, 0, 0)
 
-    # set up main driver loop
+    ring_on_color = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
+
+    # set up for main loop
     ring_cursor_on = ring_cursor_off = ring_color_index = 0
     stick_cursor = stick_max_previous = stick_max = 0
     stick_pixel_max = 1
@@ -154,7 +136,6 @@ def main_event_loop():
 
     # main driver loop
     print(' - Entering main event loop.')
-
     while True:
         clock = supervisor.ticks_ms()
         loop_count += 1
