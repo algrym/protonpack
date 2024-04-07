@@ -9,6 +9,7 @@ import audiomp3
 import audiopwmio
 import rotaryio
 import supervisor
+import watchdog
 
 import adafruit_fancyled.adafruit_fancyled as fancyled
 import board
