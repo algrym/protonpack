@@ -129,115 +129,120 @@ def all_off():
 # turn everything off on exit
 atexit.register(all_off)
 
-# set up main driver loop
-ring_cursor_on = ring_cursor_off = ring_color_index = 0
-stick_cursor = stick_max_previous = stick_max = 0
-stick_pixel_max = 1
-stick_clock_next = ring_clock_next = adjust_clock_next = 0
-rotary_encoder_last_position = None
+if __name__ == "__main__":
+    main_event_loop()
 
-# set up timers
-next_stat_clock: int = supervisor.ticks_ms() + 3000
-start_time: int = int(time.time())
-last_loop_time: int = start_time
-loop_count: int = 0
+def main_event_loop():
+    # set up main driver loop
+    ring_cursor_on = ring_cursor_off = ring_color_index = 0
+    stick_cursor = stick_max_previous = stick_max = 0
+    stick_pixel_max = 1
+    stick_clock_next = ring_clock_next = adjust_clock_next = 0
+    rotary_encoder_last_position = None
 
-print(f" - Playing {decoder.file}")
-audio.play(decoder)
+    # set up timers
+    next_stat_clock: int = supervisor.ticks_ms() + 3000
+    start_time: int = int(time.time())
+    last_loop_time: int = start_time
+    loop_count: int = 0
 
-# main driver loop
-print(' - Entering main event loop.')
-while True:
-    clock = supervisor.ticks_ms()
-    loop_count += 1
+    print(f" - Playing {decoder.file}")
+    audio.play(decoder)
 
-    # Print the average runs per second ever 10secs
-    if clock > next_stat_clock:
-        next_stat_clock: int = clock + 3000
-        print(f" - Running {time.time() - start_time}s at {loop_count / (time.time() - last_loop_time)} loops/second")
-        loop_count = 0
-        last_loop_time = int(time.time())
+    # main driver loop
+    print(' - Entering main event loop.')
 
-    # increment speeds
-    if clock > adjust_clock_next:
-        # calculate time of next speed update
-        adjust_clock_next = clock + change_speed
+    while True:
+        clock = supervisor.ticks_ms()
+        loop_count += 1
 
-        # adjust stick max if it's too low
-        if stick_pixel_max < len(stick_pixels):
-            stick_pixel_max += 1
+        # Print the average runs per second ever 10secs
+        if clock > next_stat_clock:
+            next_stat_clock: int = clock + 3000
+            print(f" - Running {time.time() - start_time}s at {loop_count / (time.time() - last_loop_time)} loops/second")
+            loop_count = 0
+            last_loop_time = int(time.time())
 
-            # adjust ring speed if it's too low
-            if neopixel_ring_speed_current > neopixel_ring_speed_cruise:
-                neopixel_ring_speed_current -= 1
-                ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
+        # increment speeds
+        if clock > adjust_clock_next:
+            # calculate time of next speed update
+            adjust_clock_next = clock + change_speed
 
-    # check trigger button
-    #   trigger/release/value are inverted from what I'd expect
-    rotary_encoder_button.update()
-    if rotary_encoder_button.rose:  # Handle trigger release
-        ring_pixels.fill(OFF)
-        print(f"   - Trigger rose at {clock}")
-    elif rotary_encoder_button.fell:  # Handle trigger engage
-        ring_pixels.fill(WHITE)
-        print(f"   - Trigger fell at {clock}")
+            # adjust stick max if it's too low
+            if stick_pixel_max < len(stick_pixels):
+                stick_pixel_max += 1
 
-    if not rotary_encoder_button.value:
-        # Trigger active: flash the cyclotron!
-        flash_random = random.randrange(0, 20)
-        if flash_random < 3:
-            ring_pixels.fill(ring_on_color[ring_color_index])
-        elif flash_random == 4:
-            ring_pixels.fill(WHITE)
-        elif flash_random == 5:
-            ring_pixels.fill(ring_on_color[random.randrange(0, len(ring_on_color))])
-        else:
+                # adjust ring speed if it's too low
+                if neopixel_ring_speed_current > neopixel_ring_speed_cruise:
+                    neopixel_ring_speed_current -= 1
+                    ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
+
+        # check trigger button
+        #   trigger/release/value are inverted from what I'd expect
+        rotary_encoder_button.update()
+        if rotary_encoder_button.rose:  # Handle trigger release
             ring_pixels.fill(OFF)
+            print(f"   - Trigger rose at {clock}")
+        elif rotary_encoder_button.fell:  # Handle trigger engage
+            ring_pixels.fill(WHITE)
+            print(f"   - Trigger fell at {clock}")
 
-        # Trigger active: decrement the power meter!
-        if (clock % 150) == 0:
-            if stick_cursor > 0:
-                stick_pixels[stick_cursor] = OFF
-                stick_pixels[stick_max_previous] = GREEN
-                stick_cursor -= 1
-        continue  # Skip the ring and stick updates if the trigger is down
+        if not rotary_encoder_button.value:
+            # Trigger active: flash the cyclotron!
+            flash_random = random.randrange(0, 20)
+            if flash_random < 3:
+                ring_pixels.fill(ring_on_color[ring_color_index])
+            elif flash_random == 4:
+                ring_pixels.fill(WHITE)
+            elif flash_random == 5:
+                ring_pixels.fill(ring_on_color[random.randrange(0, len(ring_on_color))])
+            else:
+                ring_pixels.fill(OFF)
 
-    # increment the power cell
-    if clock > stick_clock_next:
-        # calculate time of next stick update
-        stick_clock_next = clock + neopixel_stick_speed
+            # Trigger active: decrement the power meter!
+            if (clock % 150) == 0:
+                if stick_cursor > 0:
+                    stick_pixels[stick_cursor] = OFF
+                    stick_pixels[stick_max_previous] = GREEN
+                    stick_cursor -= 1
+            continue  # Skip the ring and stick updates if the trigger is down
 
-        # reset if the cursor is over the max
-        if stick_cursor > stick_max:
-            ring_pixels[ring_cursor_off] = WHITE  # spark when we hit max
-            stick_max_previous = stick_max
-            stick_max = random.randrange(0, stick_pixel_max - 1)
-            stick_cursor = 0
-            stick_pixels.fill(OFF)
+        # increment the power cell
+        if clock > stick_clock_next:
+            # calculate time of next stick update
+            stick_clock_next = clock + neopixel_stick_speed
 
-        # turn on the appropriate pixels
-        stick_pixels[stick_cursor] = BLUE
-        stick_pixels[stick_max_previous] = GREEN
-        stick_cursor += 1
+            # reset if the cursor is over the max
+            if stick_cursor > stick_max:
+                ring_pixels[ring_cursor_off] = WHITE  # spark when we hit max
+                stick_max_previous = stick_max
+                stick_max = random.randrange(0, stick_pixel_max - 1)
+                stick_cursor = 0
+                stick_pixels.fill(OFF)
 
-    # modify color as rotary encoder is turned
-    rotary_encoder_current_position = rotary_encoder.position
-    if rotary_encoder_last_position is None or rotary_encoder_current_position != rotary_encoder_last_position:
-        ring_color_index = rotary_encoder_current_position % len(ring_on_color)
-        print(f" - Ring color set to {ring_on_color[ring_color_index]} from encoder {rotary_encoder_current_position}")
-    rotary_encoder_last_position = rotary_encoder_current_position
+            # turn on the appropriate pixels
+            stick_pixels[stick_cursor] = BLUE
+            stick_pixels[stick_max_previous] = GREEN
+            stick_cursor += 1
 
-    # increment the ring
-    if clock > ring_clock_next:
-        # Calculate time of next ring update
-        ring_clock_next = clock + neopixel_ring_speed_current
+        # modify color as rotary encoder is turned
+        rotary_encoder_current_position = rotary_encoder.position
+        if rotary_encoder_last_position is None or rotary_encoder_current_position != rotary_encoder_last_position:
+            ring_color_index = rotary_encoder_current_position % len(ring_on_color)
+            print(f" - Ring color set to {ring_on_color[ring_color_index]} from encoder {rotary_encoder_current_position}")
+        rotary_encoder_last_position = rotary_encoder_current_position
 
-        # turn on the appropriate pixels
-        ring_pixels[ring_cursor_on] = ring_on_color[ring_color_index]
-        ring_pixels[ring_cursor_off] = OFF
+        # increment the ring
+        if clock > ring_clock_next:
+            # Calculate time of next ring update
+            ring_clock_next = clock + neopixel_ring_speed_current
 
-        # increment cursors
-        ring_cursor_off = (ring_cursor_on - ring_cursor_width) % len(ring_pixels)
-        ring_cursor_on = (ring_cursor_on + 1) % len(ring_pixels)
+            # turn on the appropriate pixels
+            ring_pixels[ring_cursor_on] = ring_on_color[ring_color_index]
+            ring_pixels[ring_cursor_off] = OFF
 
-    time.sleep(0.001)
+            # increment cursors
+            ring_cursor_off = (ring_cursor_on - ring_cursor_width) % len(ring_pixels)
+            ring_cursor_on = (ring_cursor_on + 1) % len(ring_pixels)
+
+        time.sleep(0.001)
