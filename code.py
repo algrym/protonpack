@@ -126,10 +126,17 @@ def main_event_loop():
     rotary_encoder_last_position = None
 
     # set up timers
-    next_stat_clock: int = supervisor.ticks_ms() + 3000
+    next_stat_clock: int = supervisor.ticks_ms() + 5000
     start_time: int = int(time.time())
     last_loop_time: int = start_time
     loop_count: int = 0
+
+    # Setup hardware watchdog in case things go wrong
+    watch_dog = microcontroller.watchdog
+    watch_dog.timeout = 8       # Hardware maximum of 8 secs
+    watch_dog.mode = watchdog.WatchDogMode.RESET
+    if supervisor.runtime.serial_connected:
+        print(f' - Watchdog: feed me every {watch_dog.timeout} seconds or face {watch_dog.mode}')
 
     print(f" - Playing {decoder.file}")
     audio.play(decoder)
@@ -142,7 +149,7 @@ def main_event_loop():
 
         # Print the average runs per second ever 10secs
         if clock > next_stat_clock:
-            next_stat_clock: int = clock + 3000
+            next_stat_clock: int = clock + 5000
             print(f" - Running {time.time() - start_time}s at {loop_count / (time.time() - last_loop_time)} loops/second")
             loop_count = 0
             last_loop_time = int(time.time())
@@ -162,7 +169,6 @@ def main_event_loop():
                     ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
 
         # check trigger button
-        #   trigger/release/value are inverted from what I'd expect
         rotary_encoder_button.update()
         if rotary_encoder_button.rose:  # Handle trigger release
             ring_pixels.fill(OFF)
@@ -193,6 +199,7 @@ def main_event_loop():
 
         # increment the power cell
         if clock > stick_clock_next:
+            watch_dog.feed()
             # calculate time of next stick update
             stick_clock_next = clock + neopixel_stick_speed
 
@@ -218,6 +225,7 @@ def main_event_loop():
 
         # increment the ring
         if clock > ring_clock_next:
+            watch_dog.feed()
             # Calculate time of next ring update
             ring_clock_next = clock + neopixel_ring_speed_current
 
