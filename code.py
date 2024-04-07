@@ -7,6 +7,7 @@ import time
 
 import audiomp3
 import audiopwmio
+import rotaryio
 import supervisor
 
 import adafruit_fancyled.adafruit_fancyled as fancyled
@@ -14,7 +15,6 @@ import board
 import digitalio
 import microcontroller
 import neopixel
-import rotaryio
 import version
 from adafruit_debouncer import Debouncer
 
@@ -136,6 +136,12 @@ stick_pixel_max = 1
 stick_clock_next = ring_clock_next = adjust_clock_next = 0
 rotary_encoder_last_position = None
 
+# set up timers
+next_stat_clock: int = supervisor.ticks_ms() + 3000
+start_time: int = int(time.time())
+last_loop_time: int = start_time
+loop_count: int = 0
+
 print(f" - Playing {decoder.file}")
 audio.play(decoder)
 
@@ -143,6 +149,14 @@ audio.play(decoder)
 print(' - Entering main event loop.')
 while True:
     clock = supervisor.ticks_ms()
+    loop_count += 1
+
+    # Print the average runs per second ever 10secs
+    if clock > next_stat_clock:
+        next_stat_clock: int = clock + 3000
+        print(f" - Running {time.time() - start_time}s at {loop_count / (time.time() - last_loop_time)} loops/second")
+        loop_count = 0
+        last_loop_time = int(time.time())
 
     # increment speeds
     if clock > adjust_clock_next:
@@ -153,10 +167,10 @@ while True:
         if stick_pixel_max < len(stick_pixels):
             stick_pixel_max += 1
 
-        # adjust ring speed if it's too low
-        if neopixel_ring_speed_current > neopixel_ring_speed_cruise:
-            neopixel_ring_speed_current -= 1
-            ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
+            # adjust ring speed if it's too low
+            if neopixel_ring_speed_current > neopixel_ring_speed_cruise:
+                neopixel_ring_speed_current -= 1
+                ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
 
     # check trigger button
     #   trigger/release/value are inverted from what I'd expect
