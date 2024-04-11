@@ -45,13 +45,17 @@ rotary_encoder_clock_pin = board.GP12
 # Pixel brightness
 neopixel_stick_brightness: float = 0.5  # 0.008 is the dimmest I can make the stick
 neopixel_ring_brightness: float = 0.7  # 0.008 is the dimmest I can make them
-brightness_levels = (0.25, 0.3, 0.15)  # balance the colors better so white doesn't appear blue-tinged
+brightness_levels = (
+    0.25,
+    0.3,
+    0.15,
+)  # balance the colors better so white doesn't appear blue-tinged
 
 # how many LEDs should the ring light at one time?
 ring_cursor_width: int = 3
 
 # Startup sound MP3 path
-startup_mp3_filename = 'lib/KJH_PackstartCombo.mp3'
+startup_mp3_filename = "lib/KJH_PackstartCombo.mp3"
 
 #
 ###################################################################
@@ -59,9 +63,12 @@ startup_mp3_filename = 'lib/KJH_PackstartCombo.mp3'
 ###################################################################
 #
 
+
 def main_event_loop():
     # Print startup info
-    print(f"-=< protonpack v{protonpack_version} - https://github.com/algrym/protonpack/ >=-")
+    print(
+        f"-=< protonpack v{protonpack_version} - https://github.com/algrym/protonpack/ >=-"
+    )
     print(f" - uname: {os.uname()}")
     print(f" - cpu uid: {microcontroller.cpu.uid}")
     print(f" -- freq: {microcontroller.cpu.frequency / 1e6} MHz")
@@ -73,15 +80,19 @@ def main_event_loop():
     # initialize neopixels
     #   Note: you may need to change pixel_order if you have an RGB, RGBW, GRBW, etc.
     print(f" - neopixel v{neopixel.__version__}")
-    print(f"   - NeoPixel stick size {neopixel_stick_num_pixels} on {neopixel_stick_pin}")
-    stick_pixels = neopixel.NeoPixel(neopixel_stick_pin,
-                                     neopixel_stick_num_pixels,
-                                     brightness=neopixel_stick_brightness,
-                                     pixel_order=neopixel.GRBW)
+    print(
+        f"   - NeoPixel stick size {neopixel_stick_num_pixels} on {neopixel_stick_pin}"
+    )
+    stick_pixels = neopixel.NeoPixel(
+        neopixel_stick_pin,
+        neopixel_stick_num_pixels,
+        brightness=neopixel_stick_brightness,
+        pixel_order=neopixel.GRBW,
+    )
     print(f"   - NeoPixel ring  size {neopixel_ring_num_pixels} on {neopixel_ring_pin}")
-    ring_pixels = neopixel.NeoPixel(neopixel_ring_pin,
-                                    neopixel_ring_num_pixels,
-                                    brightness=neopixel_ring_brightness)
+    ring_pixels = neopixel.NeoPixel(
+        neopixel_ring_pin, neopixel_ring_num_pixels, brightness=neopixel_ring_brightness
+    )
 
     # initialize rotary encoder button
     print(" - Rotary encoder:")
@@ -94,8 +105,9 @@ def main_event_loop():
     # initialize rotary encoder
     print(f"   -  clock on {rotary_encoder_clock_pin}")
     print(f"   -     dt on {rotary_encoder_dt_pin}")
-    rotary_encoder = rotaryio.IncrementalEncoder(rotary_encoder_clock_pin,
-                                                 rotary_encoder_dt_pin)
+    rotary_encoder = rotaryio.IncrementalEncoder(
+        rotary_encoder_clock_pin, rotary_encoder_dt_pin
+    )
 
     print(f"   - Input select on {hero_switch_pin}")
     hero_switch_pin_input = digitalio.DigitalInOut(hero_switch_pin)
@@ -108,7 +120,7 @@ def main_event_loop():
     audio = audiopwmio.PWMAudioOut(audio_out_pin)
 
     print(f" - Loading startup MP3: {startup_mp3_filename}")
-    decoder = audiomp3.MP3Decoder(open(startup_mp3_filename, 'rb'))
+    decoder = audiomp3.MP3Decoder(open(startup_mp3_filename, "rb"))
 
     # How fast should the neopixel cycle?
     # This is (similar to) microseconds per increment so: Higher is slower
@@ -118,13 +130,27 @@ def main_event_loop():
     change_speed: int = 30  # How often should we change speed?
 
     # Color constants
-    RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0), brightness=brightness_levels).pack()
-    ORANGE = fancyled.gamma_adjust(fancyled.CRGB(255, 165, 0), brightness=brightness_levels).pack()
-    YELLOW = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 0), brightness=brightness_levels).pack()
-    GREEN = fancyled.gamma_adjust(fancyled.CRGB(0, 255, 0), brightness=brightness_levels).pack()
-    BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255), brightness=brightness_levels).pack()
-    PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128), brightness=brightness_levels).pack()
-    WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
+    RED = fancyled.gamma_adjust(
+        fancyled.CRGB(255, 0, 0), brightness=brightness_levels
+    ).pack()
+    ORANGE = fancyled.gamma_adjust(
+        fancyled.CRGB(255, 165, 0), brightness=brightness_levels
+    ).pack()
+    YELLOW = fancyled.gamma_adjust(
+        fancyled.CRGB(255, 255, 0), brightness=brightness_levels
+    ).pack()
+    GREEN = fancyled.gamma_adjust(
+        fancyled.CRGB(0, 255, 0), brightness=brightness_levels
+    ).pack()
+    BLUE = fancyled.gamma_adjust(
+        fancyled.CRGB(0, 0, 255), brightness=brightness_levels
+    ).pack()
+    PURPLE = fancyled.gamma_adjust(
+        fancyled.CRGB(128, 0, 128), brightness=brightness_levels
+    ).pack()
+    WHITE = fancyled.gamma_adjust(
+        fancyled.CRGB(255, 255, 255), brightness=brightness_levels
+    ).pack()
     OFF = (0, 0, 0)
 
     ring_on_color = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
@@ -144,16 +170,18 @@ def main_event_loop():
 
     # Setup hardware watchdog in case things go wrong
     watch_dog = microcontroller.watchdog
-    watch_dog.timeout = 8       # Hardware maximum of 8 secs
+    watch_dog.timeout = 8  # Hardware maximum of 8 secs
     watch_dog.mode = watchdog.WatchDogMode.RESET
     if supervisor.runtime.serial_connected:
-        print(f' - Watchdog: feed me every {watch_dog.timeout} seconds or face {watch_dog.mode}')
+        print(
+            f" - Watchdog: feed me every {watch_dog.timeout} seconds or face {watch_dog.mode}"
+        )
 
     print(f" - Playing {decoder.file}")
     audio.play(decoder)
 
     # main driver loop
-    print(' - Entering main event loop.')
+    print(" - Entering main event loop.")
     while True:
         clock = supervisor.ticks_ms()
         loop_count += 1
@@ -161,7 +189,9 @@ def main_event_loop():
         # Print the average runs per second ever 10secs
         if clock > next_stat_clock:
             next_stat_clock: int = clock + 5000
-            print(f" - Running {time.time() - start_time}s at {loop_count / (time.time() - last_loop_time)} loops/second")
+            print(
+                f" - Running {time.time() - start_time}s at {loop_count / (time.time() - last_loop_time)} loops/second"
+            )
             loop_count = 0
             last_loop_time = int(time.time())
 
@@ -236,9 +266,14 @@ def main_event_loop():
 
         # modify color as rotary encoder is turned
         rotary_encoder_current_position = rotary_encoder.position
-        if rotary_encoder_last_position is None or rotary_encoder_current_position != rotary_encoder_last_position:
+        if (
+            rotary_encoder_last_position is None
+            or rotary_encoder_current_position != rotary_encoder_last_position
+        ):
             ring_color_index = rotary_encoder_current_position % len(ring_on_color)
-            print(f" - Ring color set to {ring_on_color[ring_color_index]} from encoder {rotary_encoder_current_position}")
+            print(
+                f" - Ring color set to {ring_on_color[ring_color_index]} from encoder {rotary_encoder_current_position}"
+            )
         rotary_encoder_last_position = rotary_encoder_current_position
 
         # increment the ring
@@ -256,6 +291,7 @@ def main_event_loop():
             ring_cursor_on = (ring_cursor_on + 1) % len(ring_pixels)
 
         time.sleep(0.001)
+
 
 if __name__ == "__main__":
     main_event_loop()
