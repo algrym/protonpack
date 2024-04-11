@@ -34,6 +34,9 @@ neopixel_ring_pin = board.GP28
 # Audio data out pin
 audio_out_pin = board.GP21
 
+# Hero switch pin
+hero_switch_pin = board.GP9
+
 # Rotary encoder pins
 rotary_encoder_button_pin = board.GP10
 rotary_encoder_dt_pin = board.GP11
@@ -93,6 +96,13 @@ def main_event_loop():
     print(f"   -     dt on {rotary_encoder_dt_pin}")
     rotary_encoder = rotaryio.IncrementalEncoder(rotary_encoder_clock_pin,
                                                  rotary_encoder_dt_pin)
+
+    print(f"   - Input select on {hero_switch_pin}")
+    hero_switch_pin_input = digitalio.DigitalInOut(hero_switch_pin)
+    hero_switch_pin_input.direction = digitalio.Direction.INPUT
+    # expecting switch wired from its pin to GND with 4.7kΩ pull up resistor
+    hero_switch_pin_input.pull = digitalio.Pull.UP
+    hero_switch = Debouncer(hero_switch_pin_input)
 
     print(f" - Audio out on {audio_out_pin}")
     audio = audiopwmio.PWMAudioOut(audio_out_pin)
@@ -169,7 +179,14 @@ def main_event_loop():
                     neopixel_ring_speed_current -= 1
                     ring_pixels[ring_cursor_off] = WHITE  # spark when we change speed
 
-        # check trigger button
+        # check hero_switch
+        hero_switch.update()
+        if hero_switch.fell:
+            print(" - Hero switch fell")
+        elif hero_switch.rose:
+            print(" - Hero switch rose")
+
+        # check rotary encoder
         rotary_encoder_button.update()
         if rotary_encoder_button.rose:  # Handle trigger release
             ring_pixels.fill(OFF)
