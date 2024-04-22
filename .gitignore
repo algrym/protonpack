@@ -382,5 +382,5 @@ downloads
 # ignore mp3 files
 *.mp3
 
-# ignore version.py that updates each install
-version.py
+# ignore code.py that updates each install
+code.py

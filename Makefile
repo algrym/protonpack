@@ -10,7 +10,7 @@ CODEPY_LIB_DIR=$(CIRCUIT_PYTHON_DIR)/lib
 # These shouldn't need changing, but eh ...
 CURLFLAGS="--location"
 
-all: venv downloads .gitignore version.py
+all: venv downloads .gitignore code.py
 
 venv: venv/touchfile
 
@@ -20,8 +20,12 @@ venv/touchfile: requirements.txt
 	. venv/bin/activate; pip install -Ur requirements.txt
 	touch venv/touchfile
 
-version.py: code.py
-	date -r code.py "+__version__ = %'%Y-%m-%d %H:%M:%S%'" > version.py
+code.py: protonpack.py Makefile
+	printf "#!/usr/bin/env python3\n" > $@
+	printf "import protonpack\n\n" >> $@
+	date -r $< "+__version__ = %'%Y-%m-%d %H:%M:%S%'" >> $@
+	printf "\nif __name__ == '__main__':\n" >> $@
+	printf "	protonpack.main_loop()\n" >> $@
 
 test: venv
 	. venv/bin/activate; nosetests project/test
@@ -31,7 +35,7 @@ test: venv
 	printf "\n# ignore the downloads directory\ndownloads\n" >> .gitignore
 	printf "\n# ignore .idea/ directory\n.idea/\n" >> .gitignore
 	printf "\n# ignore mp3 files\n*.mp3\n" >> .gitignore
-	printf "\n# ignore version.py that updates each install\nversion.py\n" >> .gitignore
+	printf "\n# ignore code.py that updates each install\ncode.py\n" >> .gitignore
 
 downloads: \
 	downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-$(CIRCUIT_PYTHON_VER).uf2 \
@@ -55,7 +59,7 @@ install_circuit_python: downloads/adafruit-circuitpython-raspberry_pi_pico-en_US
 
 install: all
 	rsync -avlcC \
-		version.py code.py \
+		code.py protonpack.py \
 			$(CODEPY_DIR)
 	rsync -avlcC \
 		KJH_PackstartCombo.mp3 \
