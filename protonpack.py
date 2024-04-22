@@ -15,11 +15,12 @@ from code import __version__  # Import __version__ from code.py
 def load_constants():
     constants = {}
 
-    constants['stat_clock_time_ms'] = os.getenv('stat_clock_time_ms') or "5000"
-    constants['sleep_time_secs'] = os.getenv('sleep_time_secs') or "5.0"
+    # Convert environment variable strings to integers where appropriate
+    constants['stat_clock_time_ms'] = int(os.getenv('stat_clock_time_ms', "5000"))
+    constants['sleep_time_secs'] = float(os.getenv('sleep_time_secs', "5.0"))
 
     print(f" - Loaded {len(constants)} constants from settings.toml")
-    for i in (constants):
+    for i in constants:
         print(f"    - {i} = {constants[i]}")
     return constants
 
