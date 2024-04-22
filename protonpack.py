@@ -60,12 +60,25 @@ def main_loop():
     print(f" - Free memory: {pretty_print_bytes(starting_memory_free)}")
 
     # Read in constants
-    # TODO: getting an error with return from load_constants
     constants = load_constants()
 
-    # Setup timers
+    # Initialize timers and counters
+    start_clock: int = supervisor.ticks_ms()
     next_stat_clock: int = supervisor.ticks_ms() + constants['stat_clock_time_ms']
+    loop_count: int = 0
 
+    # main driver loop
+    print("- Starting main driver loop")
+    gc.collect()  # garbage collect right before starting the while loop
     while True:
-        print(".")
-        time.sleep(5.0)
+        clock = supervisor.ticks_ms()
+        loop_count += 1
+
+        # process the stats output
+        if clock > next_stat_clock:
+            elapsed_time = (clock - start_clock) / 1000  # Convert ms to seconds
+            loops_per_second = loop_count / elapsed_time if elapsed_time > 0 else 0
+            print(f" - loop={loop_count} runtime={elapsed_time:.2f}s at {loops_per_second:.2f} loops/second")
+            next_stat_clock = clock + constants['stat_clock_time_ms']
+
+        time.sleep(constants['sleep_time_secs'])

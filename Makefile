@@ -59,7 +59,7 @@ install_circuit_python: downloads/adafruit-circuitpython-raspberry_pi_pico-en_US
 
 install: all
 	rsync -avlcC \
-		code.py protonpack.py \
+		code.py protonpack.py settings.toml \
 			$(CODEPY_DIR)
 	rsync -avlcC \
 		KJH_PackstartCombo.mp3 \
