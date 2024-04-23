@@ -27,6 +27,13 @@ def load_constants():
     return constants
 
 
+def format_time(seconds):
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
+    return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+
+
 def print_cpu_id():
     # Convert UID bytearray to a hex string and print it
     uid_hex = ':'.join(['{:02x}'.format(x) for x in microcontroller.cpu.uid])
@@ -53,7 +60,8 @@ def setup_watch_dog(timeout):
         timeout = 8
     watch_dog.timeout = timeout
     watch_dog.mode = WatchDogMode.RESET
-    watch_dog.feed()
+    print(f"- Watch dog released.  Feed every {timeout} seconds or else.")
+    watch_dog.feed()   # make sure the dog is fed before turning him loose
     return watch_dog
 
 
@@ -92,13 +100,13 @@ def main_loop():
         if clock > next_stat_clock:
             elapsed_time = (clock - start_clock) / 1000  # Convert ms to seconds
             loops_per_second = loop_count / elapsed_time if elapsed_time > 0 else 0
-            print(f" - loop={loop_count} runtime={elapsed_time:.2f}s at {loops_per_second:.2f} loops/second")
+            print(f" - loop={loop_count:,} runtime={format_time(elapsed_time)}s at {loops_per_second:.2f} loops/second")
             next_stat_clock = clock + constants['stat_clock_time_ms']
 
         # feed the watch dog once a second
         if clock > next_watch_dog_clock:
             watch_dog.feed()
-            print(f" - Watch dog fed")
-            next_watch_dog_clock = clock + 1000
+            print(f" - Watch dog fed (every {(constants['watch_dog_timeout_secs'] / 2.0)} secs)")
+            next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
 
         time.sleep(constants['sleep_time_secs'])
