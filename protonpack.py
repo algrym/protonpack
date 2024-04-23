@@ -6,6 +6,7 @@ import sys
 import time
 
 import supervisor
+from watchdog import WatchDogMode
 
 import microcontroller
 from code import __version__  # Import __version__ from code.py
@@ -18,6 +19,7 @@ def load_constants():
     # Convert environment variable strings to integers where appropriate
     constants['stat_clock_time_ms'] = int(os.getenv('stat_clock_time_ms', "5000"))
     constants['sleep_time_secs'] = float(os.getenv('sleep_time_secs', "5.0"))
+    constants['watch_dog_timeout_secs'] = int(os.getenv('watch_dog_timeout_secs', "8"))
 
     print(f" - Loaded {len(constants)} constants from settings.toml")
     for i in constants:
@@ -45,6 +47,15 @@ def pretty_print_bytes(size):
     # If size is large, it will be formatted in GB from the loop
     return f"{size:.2f} GB"
 
+def setup_watch_dog(timeout):
+    watch_dog = microcontroller.watchdog
+    if timeout > 8:  # Hardware maximum of 8 secs
+        timeout = 8
+    watch_dog.timeout = timeout
+    watch_dog.mode = WatchDogMode.RESET
+    watch_dog.feed()
+    return watch_dog
+
 
 def main_loop():
     # Print startup information
@@ -62,10 +73,13 @@ def main_loop():
     # Read in constants
     constants = load_constants()
 
+    watch_dog = setup_watch_dog(constants['watch_dog_timeout_secs'])
+
     # Initialize timers and counters
     start_clock: int = supervisor.ticks_ms()
     next_stat_clock: int = supervisor.ticks_ms() + constants['stat_clock_time_ms']
     loop_count: int = 0
+    next_watch_dog_clock: int = 0
 
     # main driver loop
     print("- Starting main driver loop")
@@ -80,5 +94,11 @@ def main_loop():
             loops_per_second = loop_count / elapsed_time if elapsed_time > 0 else 0
             print(f" - loop={loop_count} runtime={elapsed_time:.2f}s at {loops_per_second:.2f} loops/second")
             next_stat_clock = clock + constants['stat_clock_time_ms']
+
+        # feed the watch dog once a second
+        if clock > next_watch_dog_clock:
+            watch_dog.feed()
+            print(f" - Watch dog fed")
+            next_watch_dog_clock = clock + 1000
 
         time.sleep(constants['sleep_time_secs'])
