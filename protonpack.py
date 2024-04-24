@@ -54,6 +54,7 @@ def pretty_print_bytes(size):
     # If size is large, it will be formatted in GB from the loop
     return f"{size:.2f} GB"
 
+
 def setup_watch_dog(timeout):
     watch_dog = microcontroller.watchdog
     if timeout > 8:  # Hardware maximum of 8 secs
@@ -61,7 +62,7 @@ def setup_watch_dog(timeout):
     watch_dog.timeout = timeout
     watch_dog.mode = WatchDogMode.RESET
     print(f"- Watch dog released.  Feed every {timeout} seconds or else.")
-    watch_dog.feed()   # make sure the dog is fed before turning him loose
+    watch_dog.feed()  # make sure the dog is fed before turning him loose
     return watch_dog
 
 
@@ -95,7 +96,6 @@ def main_loop():
 
     power_meter_speed: int = 0
     next_power_meter_clock: int = 0
-
 
     # main driver loop
     print("- Starting main driver loop")
