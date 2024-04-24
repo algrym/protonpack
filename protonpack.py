@@ -87,7 +87,15 @@ def main_loop():
     start_clock: int = supervisor.ticks_ms()
     next_stat_clock: int = supervisor.ticks_ms() + constants['stat_clock_time_ms']
     loop_count: int = 0
+
     next_watch_dog_clock: int = 0
+
+    cyclotron_speed: int = 0
+    next_cyclotron_clock: int = 0
+
+    power_meter_speed: int = 0
+    next_power_meter_clock: int = 0
+
 
     # main driver loop
     print("- Starting main driver loop")
@@ -103,10 +111,20 @@ def main_loop():
             print(f" - loop={loop_count:,} runtime={format_time(elapsed_time)}s at {loops_per_second:.2f} loops/second")
             next_stat_clock = clock + constants['stat_clock_time_ms']
 
-        # feed the watch dog once a second
+        # Periodically feed the watch dog
         if clock > next_watch_dog_clock:
             watch_dog.feed()
             print(f" - Watch dog fed (every {(constants['watch_dog_timeout_secs'] / 2.0)} secs)")
             next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
+
+        # Update the Cyclotron
+        if clock > next_cyclotron_clock:
+            print(f" - Cyclotron update!")
+            next_cyclotron_clock = clock + cyclotron_speed
+
+        # Update the Power Meter
+        if clock > next_power_meter_clock:
+            print(f" - Power meter update!")
+            next_power_meter_clock = clock + power_meter_speed
 
         time.sleep(constants['sleep_time_secs'])
