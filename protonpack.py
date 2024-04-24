@@ -2,12 +2,14 @@
 
 import gc
 import os
+import random
 import sys
 import time
 
 import supervisor
 from watchdog import WatchDogMode
 
+import adafruit_fancyled.adafruit_fancyled as fancyled
 import board
 import microcontroller
 import neopixel
@@ -108,15 +110,26 @@ def main_loop():
 
     # Initialize Neopixels
     print(f" - neopixel v{neopixel.__version__}")
-    print(f"   - NeoPixel stick size {constants['neopixel_ring_size']} on {constants['neopixel_ring_pin']}")
-    stick_pixels = neopixel.NeoPixel(constants['neopixel_ring_pin'],
-                                     constants['neopixel_ring_size'],
-                                     brightness=constants['neopixel_ring_brightness'],
+    print(f"   - NeoPixel stick size {constants['neopixel_stick_size']} on {constants['neopixel_stick_pin']}")
+    stick_pixels = neopixel.NeoPixel(constants['neopixel_stick_pin'],
+                                     constants['neopixel_stick_size'],
+                                     brightness=constants['neopixel_stick_brightness'],
                                      pixel_order=neopixel.GRBW)  # TODO: this should come from settings.toml
-    print(f"   - NeoPixel ring  size {constants['neopixel_stick_size']} on {constants['neopixel_stick_pin']}")
-    ring_pixels = neopixel.NeoPixel(constants['neopixel_stick_pin'],
-                                    constants['neopixel_stick_size'],
-                                    brightness=constants['neopixel_stick_brightness'])
+    print(f"   - NeoPixel ring size {constants['neopixel_ring_size']} on {constants['neopixel_ring_pin']}")
+    ring_pixels = neopixel.NeoPixel(constants['neopixel_ring_pin'],
+                                    constants['neopixel_ring_size'],
+                                    brightness=constants['neopixel_ring_brightness'])
+
+    # Color constants
+    brightness_levels = (0.25, 0.3, 0.15)
+    RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0), brightness=brightness_levels).pack()
+    ORANGE = fancyled.gamma_adjust(fancyled.CRGB(255, 165, 0), brightness=brightness_levels).pack()
+    YELLOW = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 0), brightness=brightness_levels).pack()
+    GREEN = fancyled.gamma_adjust(fancyled.CRGB(0, 255, 0), brightness=brightness_levels).pack()
+    BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255), brightness=brightness_levels).pack()
+    PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128), brightness=brightness_levels).pack()
+    WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
+    OFF = (0, 0, 0)
 
     # Initialize timers and counters
     start_clock: int = supervisor.ticks_ms()
@@ -125,11 +138,17 @@ def main_loop():
 
     next_watch_dog_clock: int = 0
 
-    cyclotron_speed: int = 1300  # TODO: temporary value for cyclotron_speed
+    cyclotron_speed: int = 30  # TODO: temporary value for cyclotron_speed
     next_cyclotron_clock: int = 0
+    cyclotron_cursor_width: int = constants['neopixel_ring_cursor_size']
+    cyclotron_cursor_on: int = 0
+    cyclotron_cursor_off: int = 0
 
-    power_meter_speed: int = 1800  # TODO: temporary value for power_meter_speed
+    power_meter_speed: int = 20  # TODO: temporary value for power_meter_speed
     next_power_meter_clock: int = 0
+    power_meter_max: int = 1
+    power_meter_max_previous: int = 0
+    power_meter_cursor: int = 1
 
     # main driver loop
     print("- Starting main driver loop")
@@ -153,12 +172,32 @@ def main_loop():
 
         # Update the Cyclotron
         if clock > next_cyclotron_clock:
-            print(f" - Cyclotron update!")
+            # Calculate time of next ring update
             next_cyclotron_clock = clock + cyclotron_speed
+
+            # turn on the appropriate pixels
+            ring_pixels[cyclotron_cursor_on] = RED
+            ring_pixels[cyclotron_cursor_off] = OFF
+
+            # increment cursors
+            cyclotron_cursor_off = (cyclotron_cursor_on - cyclotron_cursor_width) % len(ring_pixels)
+            cyclotron_cursor_on = (cyclotron_cursor_on + 1) % len(ring_pixels)
 
         # Update the Power Meter
         if clock > next_power_meter_clock:
-            print(f" - Power meter update!")
             next_power_meter_clock = clock + power_meter_speed
+
+            # reset if the cursor is over the max
+            if power_meter_cursor > power_meter_max:
+                ring_pixels[cyclotron_cursor_off] = WHITE  # spark when we hit max
+                power_meter_max_previous = power_meter_max
+                power_meter_max = random.randrange(0, len(stick_pixels) - 1)
+                power_meter_cursor = 0
+                stick_pixels.fill(OFF)
+
+            # turn on the appropriate pixels
+            stick_pixels[power_meter_cursor] = BLUE
+            stick_pixels[power_meter_max_previous] = GREEN
+            power_meter_cursor += 1
 
         time.sleep(constants['sleep_time_secs'])
