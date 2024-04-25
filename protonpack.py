@@ -11,8 +11,10 @@ from watchdog import WatchDogMode
 
 import adafruit_fancyled.adafruit_fancyled as fancyled
 import board
+import digitalio
 import microcontroller
 import neopixel
+from adafruit_debouncer import Debouncer
 from code import __version__  # Import __version__ from code.py
 
 
@@ -131,6 +133,14 @@ def main_loop():
     WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
     OFF = (0, 0, 0)
 
+    # Initialize switch input
+    print(f"   - Input select on {constants['hero_switch_pin']}")
+    hero_switch_pin_input = digitalio.DigitalInOut(constants['hero_switch_pin'])
+    hero_switch_pin_input.direction = digitalio.Direction.INPUT
+    # expecting switch wired from its pin to GND with 4.7kΩ pull up resistor
+    hero_switch_pin_input.pull = digitalio.Pull.UP
+    hero_switch = Debouncer(hero_switch_pin_input)
+
     # Initialize timers and counters
     start_clock: int = supervisor.ticks_ms()
     next_stat_clock: int = supervisor.ticks_ms() + constants['stat_clock_time_ms']
@@ -150,6 +160,9 @@ def main_loop():
     power_meter_max_previous: int = 0
     power_meter_cursor: int = 1
 
+    hero_switch.update()
+    hero_switch_previous = hero_switch.value
+
     # main driver loop
     print("- Starting main driver loop")
     gc.collect()  # garbage collect right before starting the while loop
@@ -162,7 +175,7 @@ def main_loop():
             elapsed_time = (clock - start_clock) / 1000  # Convert ms to seconds
             loops_per_second = loop_count / elapsed_time if elapsed_time > 0 else 0
             print(
-                f" - {format_time(elapsed_time)} {loop_count:,} {loops_per_second:.2f} loops/s free={pretty_print_bytes(gc.mem_free())}")
+                f"{format_time(elapsed_time)} loop {loop_count:,} at {loops_per_second:.2f} loops/s free={pretty_print_bytes(gc.mem_free())}")
             next_stat_clock = clock + constants['stat_clock_time_ms']
 
         # Periodically feed the watch dog
@@ -170,6 +183,12 @@ def main_loop():
             watch_dog.feed()
             print(f" - 8===8 (fed every {(constants['watch_dog_timeout_secs'] / 2.0)} secs)")
             next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
+
+        # check hero_switch
+        hero_switch.update()
+        if hero_switch.value != hero_switch_previous:
+            hero_switch_previous = hero_switch.value
+            print(" - Hero switch flip")
 
         # Update the Cyclotron
         if clock > next_cyclotron_clock:
