@@ -99,7 +99,7 @@ def main_loop():
     print_cpu_id()
     print(f" -- freq: {microcontroller.cpu.frequency / 1e6} MHz")
     print(f" -- reset reason: {microcontroller.cpu.reset_reason}")
-    print(f" -- nvm: {len(microcontroller.nvm)} bytes")
+    print(f" -- nvm: {pretty_print_bytes(len(microcontroller.nvm))}")
     print(f" - python v{sys.version}")
     gc.collect()
     starting_memory_free = gc.mem_free()
@@ -141,27 +141,30 @@ def main_loop():
     hero_switch_pin_input.pull = digitalio.Pull.UP
     hero_switch = Debouncer(hero_switch_pin_input)
 
-    # Initialize timers and counters
-    start_clock: int = supervisor.ticks_ms()
-    next_stat_clock: int = supervisor.ticks_ms() + constants['stat_clock_time_ms']
-    loop_count: int = 0
-
-    next_watch_dog_clock: int = 0
-
+    # Initialize cyclotron counters
     cyclotron_speed: int = 30  # TODO: temporary value for cyclotron_speed
     next_cyclotron_clock: int = 0
     cyclotron_cursor_width: int = constants['neopixel_ring_cursor_size']
     cyclotron_cursor_on: int = 0
     cyclotron_cursor_off: int = 0
 
+    # Initialize power meter counters
     power_meter_speed: int = 10  # TODO: temporary value for power_meter_speed
     next_power_meter_clock: int = 0
     power_meter_max: int = 1
     power_meter_max_previous: int = 0
     power_meter_cursor: int = 1
 
+    # Initialize her switch state
     hero_switch.update()
     hero_switch_previous = hero_switch.value
+
+    # Initialize timers and counters
+    start_clock: int = supervisor.ticks_ms()
+    next_stat_clock: int = supervisor.ticks_ms() + constants['stat_clock_time_ms']
+    loop_count: int = 0
+
+    next_watch_dog_clock: int = 0
 
     # main driver loop
     print("- Starting main driver loop")
