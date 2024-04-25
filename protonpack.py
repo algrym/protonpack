@@ -168,12 +168,12 @@ def main_loop():
         # Periodically feed the watch dog
         if clock > next_watch_dog_clock:
             watch_dog.feed()
-            print(f" - Watch dog fed (every {(constants['watch_dog_timeout_secs'] / 2.0)} secs)")
+            print(f" - 8===8 (fed every {(constants['watch_dog_timeout_secs'] / 2.0)} secs)")
             next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
 
         # Update the Cyclotron
         if clock > next_cyclotron_clock:
-            # Calculate time of next ring update
+            # Calculate time of next cyclotron update
             next_cyclotron_clock = clock + cyclotron_speed
 
             # turn on the appropriate pixels
@@ -186,6 +186,7 @@ def main_loop():
 
         # Update the Power Meter
         if clock > next_power_meter_clock:
+            # Calculate time of next power meter update
             next_power_meter_clock = clock + power_meter_speed
 
             # reset if the cursor is over the max
