@@ -181,7 +181,7 @@ def main_loop():
         # Periodically feed the watch dog
         if clock > next_watch_dog_clock:
             watch_dog.feed()
-            print(f" - 8===8 (fed every {(constants['watch_dog_timeout_secs'] / 2.0)} secs)")
+            print(f".")
             next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
 
         # check hero_switch
