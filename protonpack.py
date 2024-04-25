@@ -38,7 +38,7 @@ def load_constants():
     constants['neopixel_ring_brightness'] = float(os.getenv('neopixel_ring_brightness', "0.7"))
     constants['neopixel_stick_pin'] = get_pin(os.getenv('neopixel_stick_pin', "GP27"))
     constants['neopixel_stick_size'] = int(os.getenv('neopixel_stick_size', "20"))
-    constants['neopixel_stick_brightness'] = float(os.getenv('neopixel_stick_size', "0.5"))
+    constants['neopixel_stick_brightness'] = float(os.getenv('neopixel_stick_brightness', "0.5"))
     constants['audio_out_pin'] = get_pin(os.getenv('audio_out_pin', "GP21"))
     constants['hero_switch_pin'] = get_pin(os.getenv('hero_switch_pin', "GP9"))
     constants['rotary_encoder_button_pin'] = get_pin(os.getenv('rotary_encoder_button_pin', "GP10"))
@@ -144,7 +144,7 @@ def main_loop():
     cyclotron_cursor_on: int = 0
     cyclotron_cursor_off: int = 0
 
-    power_meter_speed: int = 20  # TODO: temporary value for power_meter_speed
+    power_meter_speed: int = 10  # TODO: temporary value for power_meter_speed
     next_power_meter_clock: int = 0
     power_meter_max: int = 1
     power_meter_max_previous: int = 0
@@ -161,7 +161,8 @@ def main_loop():
         if clock > next_stat_clock:
             elapsed_time = (clock - start_clock) / 1000  # Convert ms to seconds
             loops_per_second = loop_count / elapsed_time if elapsed_time > 0 else 0
-            print(f" - loop={loop_count:,} runtime={format_time(elapsed_time)}s at {loops_per_second:.2f} loops/second")
+            print(
+                f" - {format_time(elapsed_time)} {loop_count:,} {loops_per_second:.2f} loops/s free={pretty_print_bytes(gc.mem_free())}")
             next_stat_clock = clock + constants['stat_clock_time_ms']
 
         # Periodically feed the watch dog
