@@ -110,18 +110,6 @@ def main_loop():
 
     watch_dog = setup_watch_dog(constants['watch_dog_timeout_secs'])
 
-    # Initialize Neopixels
-    print(f" - neopixel v{neopixel.__version__}")
-    print(f"   - NeoPixel stick size {constants['neopixel_stick_size']} on {constants['neopixel_stick_pin']}")
-    stick_pixels = neopixel.NeoPixel(constants['neopixel_stick_pin'],
-                                     constants['neopixel_stick_size'],
-                                     brightness=constants['neopixel_stick_brightness'],
-                                     pixel_order=neopixel.GRBW)  # TODO: this should come from settings.toml
-    print(f"   - NeoPixel ring size {constants['neopixel_ring_size']} on {constants['neopixel_ring_pin']}")
-    ring_pixels = neopixel.NeoPixel(constants['neopixel_ring_pin'],
-                                    constants['neopixel_ring_size'],
-                                    brightness=constants['neopixel_ring_brightness'])
-
     # Color constants
     brightness_levels = (0.25, 0.3, 0.15)
     RED = fancyled.gamma_adjust(fancyled.CRGB(255, 0, 0), brightness=brightness_levels).pack()
@@ -132,6 +120,31 @@ def main_loop():
     PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128), brightness=brightness_levels).pack()
     WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
     OFF = (0, 0, 0)
+
+    # Initialize Neopixels
+    print(f" - neopixel v{neopixel.__version__}")
+    print(f"   - NeoPixel stick size {constants['neopixel_stick_size']} on {constants['neopixel_stick_pin']}")
+    stick_pixels = neopixel.NeoPixel(constants['neopixel_stick_pin'],
+                                     constants['neopixel_stick_size'],
+                                     brightness=constants['neopixel_stick_brightness'],
+                                     pixel_order=neopixel.GRBW)  # TODO: this should come from settings.toml
+    stick_pixels.fill(OFF)
+
+    print(f"   - NeoPixel ring size {constants['neopixel_ring_size']} on {constants['neopixel_ring_pin']}")
+    ring_pixels = neopixel.NeoPixel(constants['neopixel_ring_pin'],
+                                    constants['neopixel_ring_size'],
+                                    brightness=constants['neopixel_ring_brightness'])
+    ring_pixels.fill(OFF)
+
+    # State definitions
+    class State:
+        POWER_ON = 1
+        STANDBY = 2
+        STARTUP = 3
+        LOOP_IDLE = 4
+
+    # Initial state
+    current_state = State.POWER_ON
 
     # Initialize switch input
     print(f"   - Input select on {constants['hero_switch_pin']}")
@@ -157,7 +170,6 @@ def main_loop():
 
     # Initialize her switch state
     hero_switch.update()
-    hero_switch_previous = hero_switch.value
 
     # Initialize timers and counters
     start_clock: int = supervisor.ticks_ms()
@@ -189,12 +201,17 @@ def main_loop():
 
         # check hero_switch
         hero_switch.update()
-        if hero_switch.value != hero_switch_previous:
-            hero_switch_previous = hero_switch.value
-            print(" - Hero switch flip")
+        if hero_switch.fell:
+            current_state = State.STANDBY
+            ring_pixels.fill(OFF)
+            stick_pixels.fill(OFF)
+            print(f" - Hero switch fell: current_state={current_state}")
+        elif hero_switch.rose:
+            current_state = State.LOOP_IDLE
+            print(f" - Hero switch rose: current_state={current_state}")
 
         # Update the Cyclotron
-        if clock > next_cyclotron_clock:
+        if (clock > next_cyclotron_clock) and (current_state == State.LOOP_IDLE):
             # Calculate time of next cyclotron update
             next_cyclotron_clock = clock + cyclotron_speed
 
@@ -207,7 +224,7 @@ def main_loop():
             cyclotron_cursor_on = (cyclotron_cursor_on + 1) % len(ring_pixels)
 
         # Update the Power Meter
-        if clock > next_power_meter_clock:
+        if (clock > next_power_meter_clock) and (current_state == State.LOOP_IDLE):
             # Calculate time of next power meter update
             next_power_meter_clock = clock + power_meter_speed
 
