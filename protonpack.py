@@ -143,9 +143,6 @@ def main_loop():
         STARTUP = 3
         LOOP_IDLE = 4
 
-    # Initial state
-    current_state = State.POWER_ON
-
     # Initialize switch input
     print(f"   - Input select on {constants['hero_switch_pin']}")
     hero_switch_pin_input = digitalio.DigitalInOut(constants['hero_switch_pin'])
@@ -170,6 +167,10 @@ def main_loop():
 
     # Initialize her switch state
     hero_switch.update()
+    if hero_switch.value:
+        current_state = State.LOOP_IDLE
+    else:
+        current_state = State.STANDBY
 
     # Initialize timers and counters
     start_clock: int = supervisor.ticks_ms()
