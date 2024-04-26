@@ -1,3 +1,5 @@
+audio_out_pin="GP21"
+startup_mp3_filename="lib/KJH_PackstartCombo.mp3"
 stat_clock_time_ms="5000"
 sleep_time_secs="0.01"
 watch_dog_timeout_secs="7"

@@ -6,6 +6,8 @@ import random
 import sys
 import time
 
+import audiomp3
+import audiopwmio
 import supervisor
 from watchdog import WatchDogMode
 
@@ -40,6 +42,8 @@ def load_constants():
     constants['stat_clock_time_ms'] = int(os.getenv('stat_clock_time_ms', "5000"))
     constants['sleep_time_secs'] = float(os.getenv('sleep_time_secs', "0.01"))
     constants['watch_dog_timeout_secs'] = int(os.getenv('watch_dog_timeout_secs', "7"))
+    constants['audio_out_pin'] = get_pin(os.getenv('audio_out_pin', "GP21"))
+    constants['startup_mp3_filename'] = os.getenv('startup_mp3_filename', "lib/KJH_PackstartCombo.mp3")
     constants['neopixel_ring_pin'] = get_pin(os.getenv('neopixel_ring_pin', "GP28"))
     constants['neopixel_ring_size'] = int(os.getenv('neopixel_ring_size', "60"))
     constants['neopixel_ring_cursor_size'] = int(os.getenv('neopixel_ring_cursor_size', "3"))
@@ -161,6 +165,13 @@ def main_loop():
     hero_switch_pin_input.pull = digitalio.Pull.UP
     hero_switch = Debouncer(hero_switch_pin_input)
 
+    # Initialize audio and startup noise
+    print(f" - Audio out on {constants['audio_out_pin']}")
+    audio = audiopwmio.PWMAudioOut(constants['audio_out_pin'])
+
+    print(f" - Loading startup MP3: {constants['startup_mp3_filename']}")
+    decoder = audiomp3.MP3Decoder(open(constants['startup_mp3_filename'], 'rb'))
+
     # Initialize cyclotron counters
     cyclotron_speed: int = 30  # TODO: temporary value for cyclotron_speed
     next_cyclotron_clock: int = 0
@@ -175,7 +186,7 @@ def main_loop():
     power_meter_max_previous: int = 0
     power_meter_cursor: int = 1
 
-    # Initialize her switch state
+    # Initialize hero switch state
     hero_switch.update()
     if hero_switch.value:
         current_state = State.LOOP_IDLE
@@ -218,9 +229,12 @@ def main_loop():
             stick_pixels.fill(OFF)
             print(f" - Hero switch fell: current_state={print_state(current_state)}")
         elif hero_switch.rose:
-            current_state = State.LOOP_IDLE
+            current_state = State.STARTUP
             power_meter_cursor = 1
             print(f" - Hero switch rose: current_state={print_state(current_state)}")
+
+            print(f" - Playing {decoder.file}")
+            audio.play(decoder)
 
         # Handle updates by state
         if current_state == State.STANDBY:
@@ -235,10 +249,13 @@ def main_loop():
                 else:
                     stick_pixels[0] = OFF
                     power_meter_cursor += 1
-        elif current_state == State.POWER_ON:
-            pass
         elif current_state == State.STARTUP:
-            pass
+            # When the audio is complete, transition to the LOOP_IDLE state
+            if not audio.playing:
+                current_state = State.LOOP_IDLE
+
+        elif current_state == State.POWER_ON:
+                pass
         elif current_state == State.LOOP_IDLE:
             if clock > next_cyclotron_clock:
                 # Calculate time of next cyclotron update
@@ -264,10 +281,10 @@ def main_loop():
                     power_meter_cursor = 0
                     stick_pixels.fill(OFF)
 
-            # turn on the appropriate pixels
-            stick_pixels[power_meter_cursor] = BLUE
-            stick_pixels[power_meter_max_previous] = GREEN
-            power_meter_cursor += 1
+                # turn on the appropriate pixels
+                stick_pixels[power_meter_cursor] = BLUE
+                stick_pixels[power_meter_max_previous] = GREEN
+                power_meter_cursor += 1
         else:
             # We shouldn't be in this state
             print(f"*** Switching from {print_state(current_state)} to {print_state(State.POWER_ON)}")
