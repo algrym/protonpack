@@ -17,6 +17,12 @@ import neopixel
 from adafruit_debouncer import Debouncer
 from code import __version__  # Import __version__ from code.py
 
+# State definitions
+class State:
+    POWER_ON = 1
+    STANDBY = 2
+    STARTUP = 3
+    LOOP_IDLE = 4
 
 # Function to get a pin from board module
 def get_pin(pin_name):
@@ -59,6 +65,17 @@ def format_time(seconds):
     seconds = seconds % 60
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
+def print_state(state):
+    if state == State.POWER_ON:
+        return 'POWER_ON'
+    elif state == State.STANDBY:
+        return 'STANDBY'
+    elif state == State.STARTUP:
+        return 'STARTUP'
+    elif state == State.LOOP_IDLE:
+        return 'LOOP_IDLE'
+    else:
+        return f"? ({state})"
 
 def print_cpu_id():
     # Convert UID bytearray to a hex string and print it
@@ -136,13 +153,6 @@ def main_loop():
                                     brightness=constants['neopixel_ring_brightness'])
     ring_pixels.fill(OFF)
 
-    # State definitions
-    class State:
-        POWER_ON = 1
-        STANDBY = 2
-        STARTUP = 3
-        LOOP_IDLE = 4
-
     # Initialize switch input
     print(f"   - Input select on {constants['hero_switch_pin']}")
     hero_switch_pin_input = digitalio.DigitalInOut(constants['hero_switch_pin'])
@@ -191,7 +201,7 @@ def main_loop():
             elapsed_time = (clock - start_clock) / 1000  # Convert ms to seconds
             loops_per_second = loop_count / elapsed_time if elapsed_time > 0 else 0
             print(
-                f"{format_time(elapsed_time)} loop {loop_count:,} at {loops_per_second:.2f} loops/s free={pretty_print_bytes(gc.mem_free())}")
+                f"{format_time(elapsed_time)} {print_state(current_state)} loop {loop_count:,} at {loops_per_second:.2f} loops/s free={pretty_print_bytes(gc.mem_free())}")
             next_stat_clock = clock + constants['stat_clock_time_ms']
 
         # Periodically feed the watch dog
@@ -211,6 +221,18 @@ def main_loop():
             current_state = State.LOOP_IDLE
             print(f" - Hero switch rose: current_state={current_state}")
 
+        # Handle updates by state
+        if current_state == 'POWER_ON':
+            pass
+        elif current_state == 'STANDBY':
+            pass
+        elif current_state == 'STARTUP':
+            pass
+        elif current_state == 'LOOP_IDLE':
+            pass
+        else:
+            pass
+
         # Update the Cyclotron
         if (clock > next_cyclotron_clock) and (current_state == State.LOOP_IDLE):
             # Calculate time of next cyclotron update
@@ -225,21 +247,29 @@ def main_loop():
             cyclotron_cursor_on = (cyclotron_cursor_on + 1) % len(ring_pixels)
 
         # Update the Power Meter
-        if (clock > next_power_meter_clock) and (current_state == State.LOOP_IDLE):
+        if clock > next_power_meter_clock:
             # Calculate time of next power meter update
             next_power_meter_clock = clock + power_meter_speed
+            if current_state == State.LOOP_IDLE:
+                # reset if the cursor is over the max
+                if power_meter_cursor > power_meter_max:
+                    ring_pixels[cyclotron_cursor_off] = WHITE  # spark when we hit max
+                    power_meter_max_previous = power_meter_max
+                    power_meter_max = random.randrange(0, len(stick_pixels) - 1)
+                    power_meter_cursor = 0
+                    stick_pixels.fill(OFF)
 
-            # reset if the cursor is over the max
-            if power_meter_cursor > power_meter_max:
-                ring_pixels[cyclotron_cursor_off] = WHITE  # spark when we hit max
-                power_meter_max_previous = power_meter_max
-                power_meter_max = random.randrange(0, len(stick_pixels) - 1)
-                power_meter_cursor = 0
-                stick_pixels.fill(OFF)
-
-            # turn on the appropriate pixels
-            stick_pixels[power_meter_cursor] = BLUE
-            stick_pixels[power_meter_max_previous] = GREEN
-            power_meter_cursor += 1
+                # turn on the appropriate pixels
+                stick_pixels[power_meter_cursor] = BLUE
+                stick_pixels[power_meter_max_previous] = GREEN
+                power_meter_cursor += 1
+            elif current_state == State.STANDBY:
+                # Blink quietly in STANDBY
+                if power_meter_cursor >= 100:
+                    stick_pixels[0] = GREEN
+                    power_meter_cursor = 0
+                else:
+                    stick_pixels[0] = OFF
+                    power_meter_cursor += 1
 
         time.sleep(constants['sleep_time_secs'])
