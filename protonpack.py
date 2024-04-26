@@ -216,41 +216,46 @@ def main_loop():
             current_state = State.STANDBY
             ring_pixels.fill(OFF)
             stick_pixels.fill(OFF)
-            print(f" - Hero switch fell: current_state={current_state}")
+            print(f" - Hero switch fell: current_state={print_state(current_state)}")
         elif hero_switch.rose:
             current_state = State.LOOP_IDLE
-            print(f" - Hero switch rose: current_state={current_state}")
+            power_meter_cursor = 1
+            print(f" - Hero switch rose: current_state={print_state(current_state)}")
 
         # Handle updates by state
-        if current_state == 'POWER_ON':
+        if current_state == State.STANDBY:
+            # Blink the Power Meter
+            if clock > next_power_meter_clock:
+                # Calculate time of next power meter update
+                next_power_meter_clock = clock + power_meter_speed
+                # Blink quietly in STANDBY
+                if power_meter_cursor >= 100:
+                    stick_pixels[0] = GREEN
+                    power_meter_cursor = 1
+                else:
+                    stick_pixels[0] = OFF
+                    power_meter_cursor += 1
+        elif current_state == State.POWER_ON:
             pass
-        elif current_state == 'STANDBY':
+        elif current_state == State.STARTUP:
             pass
-        elif current_state == 'STARTUP':
-            pass
-        elif current_state == 'LOOP_IDLE':
-            pass
-        else:
-            pass
+        elif current_state == State.LOOP_IDLE:
+            if clock > next_cyclotron_clock:
+                # Calculate time of next cyclotron update
+                next_cyclotron_clock = clock + cyclotron_speed
 
-        # Update the Cyclotron
-        if (clock > next_cyclotron_clock) and (current_state == State.LOOP_IDLE):
-            # Calculate time of next cyclotron update
-            next_cyclotron_clock = clock + cyclotron_speed
+                # turn on the appropriate pixels
+                ring_pixels[cyclotron_cursor_on] = RED
+                ring_pixels[cyclotron_cursor_off] = OFF
 
-            # turn on the appropriate pixels
-            ring_pixels[cyclotron_cursor_on] = RED
-            ring_pixels[cyclotron_cursor_off] = OFF
+                # increment cursors
+                cyclotron_cursor_off = (cyclotron_cursor_on - cyclotron_cursor_width) % len(ring_pixels)
+                cyclotron_cursor_on = (cyclotron_cursor_on + 1) % len(ring_pixels)
 
-            # increment cursors
-            cyclotron_cursor_off = (cyclotron_cursor_on - cyclotron_cursor_width) % len(ring_pixels)
-            cyclotron_cursor_on = (cyclotron_cursor_on + 1) % len(ring_pixels)
-
-        # Update the Power Meter
-        if clock > next_power_meter_clock:
-            # Calculate time of next power meter update
-            next_power_meter_clock = clock + power_meter_speed
-            if current_state == State.LOOP_IDLE:
+            # Update the Power Meter
+            if clock > next_power_meter_clock:
+                # Calculate time of next power meter update
+                next_power_meter_clock = clock + power_meter_speed
                 # reset if the cursor is over the max
                 if power_meter_cursor > power_meter_max:
                     ring_pixels[cyclotron_cursor_off] = WHITE  # spark when we hit max
@@ -259,17 +264,13 @@ def main_loop():
                     power_meter_cursor = 0
                     stick_pixels.fill(OFF)
 
-                # turn on the appropriate pixels
-                stick_pixels[power_meter_cursor] = BLUE
-                stick_pixels[power_meter_max_previous] = GREEN
-                power_meter_cursor += 1
-            elif current_state == State.STANDBY:
-                # Blink quietly in STANDBY
-                if power_meter_cursor >= 100:
-                    stick_pixels[0] = GREEN
-                    power_meter_cursor = 0
-                else:
-                    stick_pixels[0] = OFF
-                    power_meter_cursor += 1
+            # turn on the appropriate pixels
+            stick_pixels[power_meter_cursor] = BLUE
+            stick_pixels[power_meter_max_previous] = GREEN
+            power_meter_cursor += 1
+        else:
+            # We shouldn't be in this state
+            print(f"*** Switching from {print_state(current_state)} to {print_state(State.POWER_ON)}")
+            current_state = State.POWER_ON
 
         time.sleep(constants['sleep_time_secs'])
