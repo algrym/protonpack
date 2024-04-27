@@ -9,7 +9,6 @@ import time
 import audiomp3
 import audiopwmio
 import supervisor
-from watchdog import WatchDogMode
 
 import adafruit_fancyled.adafruit_fancyled as fancyled
 import board
@@ -41,7 +40,6 @@ def load_constants():
     # Convert environment variable strings to integers where appropriate
     constants['stat_clock_time_ms'] = int(os.getenv('stat_clock_time_ms', "5000"))
     constants['sleep_time_secs'] = float(os.getenv('sleep_time_secs', "0.01"))
-    constants['watch_dog_timeout_secs'] = int(os.getenv('watch_dog_timeout_secs', "7"))
     constants['audio_out_pin'] = get_pin(os.getenv('audio_out_pin', "GP21"))
     constants['startup_mp3_filename'] = os.getenv('startup_mp3_filename', "lib/KJH_PackstartCombo.mp3")
     constants['neopixel_ring_pin'] = get_pin(os.getenv('neopixel_ring_pin', "GP28"))
@@ -102,17 +100,6 @@ def pretty_print_bytes(size):
     return f"{size:.2f} GB"
 
 
-def setup_watch_dog(timeout):
-    watch_dog = microcontroller.watchdog
-    if timeout > 8:  # Hardware maximum of 8 secs
-        timeout = 8
-    watch_dog.timeout = timeout
-    watch_dog.mode = WatchDogMode.RESET
-    print(f"- Watch dog released.  Feed every {timeout} seconds or else.")
-    watch_dog.feed()  # make sure the dog is fed before turning him loose
-    return watch_dog
-
-
 def main_loop():
     # Print startup information
     print(f"-=< protonpack v{__version__} - https://github.com/algrym/protonpack/ >=-")
@@ -128,8 +115,6 @@ def main_loop():
 
     # Read in constants
     constants = load_constants()
-
-    watch_dog = setup_watch_dog(constants['watch_dog_timeout_secs'])
 
     # Color constants
     brightness_levels = (0.25, 0.3, 0.15)
@@ -161,7 +146,7 @@ def main_loop():
     print(f"   - Input select on {constants['hero_switch_pin']}")
     hero_switch_pin_input = digitalio.DigitalInOut(constants['hero_switch_pin'])
     hero_switch_pin_input.direction = digitalio.Direction.INPUT
-    # expecting switch wired from its pin to GND with 4.7kΩ pull up resistor
+    # expecting switch wired from its pin to GND
     hero_switch_pin_input.pull = digitalio.Pull.UP
     hero_switch = Debouncer(hero_switch_pin_input)
 
@@ -198,8 +183,6 @@ def main_loop():
     next_stat_clock: int = supervisor.ticks_ms() + constants['stat_clock_time_ms']
     loop_count: int = 0
 
-    next_watch_dog_clock: int = 0
-
     # main driver loop
     print("- Starting main driver loop")
     gc.collect()  # garbage collect right before starting the while loop
@@ -215,12 +198,6 @@ def main_loop():
                 f"{format_time(elapsed_time)} {print_state(current_state)} loop {loop_count:,} at {loops_per_second:.2f} loops/s free={pretty_print_bytes(gc.mem_free())}")
             next_stat_clock = clock + constants['stat_clock_time_ms']
 
-        # Periodically feed the watch dog
-        if clock > next_watch_dog_clock:
-            watch_dog.feed()
-            print(f".")
-            next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
-
         # check hero_switch
         hero_switch.update()
         if hero_switch.fell:
@@ -233,7 +210,7 @@ def main_loop():
             power_meter_cursor = 1
             print(f" - Hero switch rose: current_state={print_state(current_state)}")
 
-            print(f" - Playing {decoder.file}")
+            print(f" - Playing {constants['startup_mp3_filename']}")
             audio.play(decoder)
 
         # Handle updates by state
