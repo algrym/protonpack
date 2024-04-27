@@ -18,12 +18,13 @@ import neopixel
 from adafruit_debouncer import Debouncer
 from code import __version__  # Import __version__ from code.py
 
+
 # State definitions
 class State:
     POWER_ON = 1
     STANDBY = 2
-    STARTUP = 3
-    LOOP_IDLE = 4
+    LOOP_IDLE = 3
+
 
 # Function to get a pin from board module
 def get_pin(pin_name):
@@ -54,9 +55,13 @@ def load_constants():
     constants['rotary_encoder_button_pin'] = get_pin(os.getenv('rotary_encoder_button_pin', "GP10"))
     constants['rotary_encoder_dt_pin'] = get_pin(os.getenv('rotary_encoder_dt_pin', "GP11"))
     constants['rotary_encoder_clock_pin'] = get_pin(os.getenv('rotary_encoder_clock_pin', "GP12"))
+    constants['cyclotron_speed'] = int(os.getenv('cyclotron_speed', "30"))
+    constants['cyclotron_starting_speed'] = int(os.getenv('cyclotron_starting_speed', "300"))
+    constants['power_meter_speed'] = int(os.getenv('power_meter_speed', "10"))
+    constants['power_meter_starting_speed'] = int(os.getenv('power_meter_starting_speed', "100"))
 
     print(f" - Loaded {len(constants)} constants from settings.toml")
-    for i in constants:
+    for i in sorted(constants):
         print(f"    - {i} = {constants[i]}")
     return constants
 
@@ -67,17 +72,17 @@ def format_time(seconds):
     seconds = seconds % 60
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
+
 def print_state(state):
     if state == State.POWER_ON:
         return 'POWER_ON'
     elif state == State.STANDBY:
         return 'STANDBY'
-    elif state == State.STARTUP:
-        return 'STARTUP'
     elif state == State.LOOP_IDLE:
         return 'LOOP_IDLE'
     else:
         return f"? ({state})"
+
 
 def print_cpu_id():
     # Convert UID bytearray to a hex string and print it
@@ -125,6 +130,7 @@ def main_loop():
     BLUE = fancyled.gamma_adjust(fancyled.CRGB(0, 0, 255), brightness=brightness_levels).pack()
     PURPLE = fancyled.gamma_adjust(fancyled.CRGB(128, 0, 128), brightness=brightness_levels).pack()
     WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
+    ON = (255, 255, 255)
     OFF = (0, 0, 0)
 
     # Initialize Neopixels
@@ -158,14 +164,14 @@ def main_loop():
     decoder = audiomp3.MP3Decoder(open(constants['startup_mp3_filename'], 'rb'))
 
     # Initialize cyclotron counters
-    cyclotron_speed: int = 30  # TODO: temporary value for cyclotron_speed
+    cyclotron_speed: int = constants['cyclotron_speed']
     next_cyclotron_clock: int = 0
     cyclotron_cursor_width: int = constants['neopixel_ring_cursor_size']
     cyclotron_cursor_on: int = 0
     cyclotron_cursor_off: int = 0
 
     # Initialize power meter counters
-    power_meter_speed: int = 10  # TODO: temporary value for power_meter_speed
+    power_meter_speed: int = constants['power_meter_speed']
     next_power_meter_clock: int = 0
     power_meter_max: int = 1
     power_meter_max_previous: int = 0
@@ -202,13 +208,18 @@ def main_loop():
         hero_switch.update()
         if hero_switch.fell:
             current_state = State.STANDBY
+            print(f" - Hero switch fell: current_state={print_state(current_state)}")
+
             ring_pixels.fill(OFF)
             stick_pixels.fill(OFF)
-            print(f" - Hero switch fell: current_state={print_state(current_state)}")
+
         elif hero_switch.rose:
-            current_state = State.STARTUP
-            power_meter_cursor = 1
+            current_state = State.LOOP_IDLE
             print(f" - Hero switch rose: current_state={print_state(current_state)}")
+
+            cyclotron_speed = constants['cyclotron_starting_speed']
+            power_meter_speed = constants['power_meter_starting_speed']
+            power_meter_cursor = 1
 
             print(f" - Playing {constants['startup_mp3_filename']}")
             audio.play(decoder)
@@ -226,14 +237,22 @@ def main_loop():
                 else:
                     stick_pixels[0] = OFF
                     power_meter_cursor += 1
-        elif current_state == State.STARTUP:
-            # When the audio is complete, transition to the LOOP_IDLE state
-            if not audio.playing:
-                current_state = State.LOOP_IDLE
 
         elif current_state == State.POWER_ON:
-                pass
+            pass
+
         elif current_state == State.LOOP_IDLE:
+            # Gradually speed up the displays
+            if cyclotron_speed > constants['cyclotron_speed']:
+                cyclotron_speed -= 5
+            elif cyclotron_speed < constants['cyclotron_speed']:
+                cyclotron_speed = constants['cyclotron_speed']
+
+            if power_meter_speed > constants['power_meter_speed']:
+                power_meter_speed -= 1
+            elif power_meter_speed < constants['power_meter_speed']:
+                power_meter_speed = constants['power_meter_speed']
+
             if clock > next_cyclotron_clock:
                 # Calculate time of next cyclotron update
                 next_cyclotron_clock = clock + cyclotron_speed
@@ -252,7 +271,7 @@ def main_loop():
                 next_power_meter_clock = clock + power_meter_speed
                 # reset if the cursor is over the max
                 if power_meter_cursor > power_meter_max:
-                    ring_pixels[cyclotron_cursor_off] = WHITE  # spark when we hit max
+                    ring_pixels[cyclotron_cursor_off] = ON  # spark when we hit max
                     power_meter_max_previous = power_meter_max
                     power_meter_max = random.randrange(0, len(stick_pixels) - 1)
                     power_meter_cursor = 0
