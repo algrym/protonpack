@@ -17,6 +17,7 @@ import microcontroller
 import neopixel
 from adafruit_debouncer import Debouncer
 from code import __version__  # Import __version__ from code.py
+from watchdog import WatchDogMode
 
 
 # State definitions
@@ -59,12 +60,22 @@ def load_constants():
     constants['cyclotron_starting_speed'] = int(os.getenv('cyclotron_starting_speed', "300"))
     constants['power_meter_speed'] = int(os.getenv('power_meter_speed', "10"))
     constants['power_meter_starting_speed'] = int(os.getenv('power_meter_starting_speed', "100"))
+    constants['watch_dog_timeout_secs'] = int(os.getenv('watch_dog_timeout_secs', "7"))
 
     print(f" - Loaded {len(constants)} constants from settings.toml")
     for i in sorted(constants):
         print(f"    - {i} = {constants[i]}")
     return constants
 
+def setup_watch_dog(timeout):
+    watch_dog = microcontroller.watchdog
+    if timeout > 8:  # Hardware maximum of 8 secs
+        timeout = 8
+    watch_dog.timeout = timeout
+    watch_dog.mode = WatchDogMode.RESET
+    print(f"- Watch dog released.  Feed every {timeout} seconds or else.")
+    watch_dog.feed()  # make sure the dog is fed before turning him loose
+    return watch_dog
 
 def format_time(seconds):
     hours = seconds // 3600
@@ -184,10 +195,13 @@ def main_loop():
     else:
         current_state = State.STANDBY
 
+    watch_dog = setup_watch_dog(constants['watch_dog_timeout_secs'])
+
     # Initialize timers and counters
     start_clock: int = supervisor.ticks_ms()
     next_stat_clock: int = supervisor.ticks_ms() + constants['stat_clock_time_ms']
     loop_count: int = 0
+    next_watch_dog_clock: int = 0
 
     # main driver loop
     print("- Starting main driver loop")
@@ -223,6 +237,12 @@ def main_loop():
 
             print(f" - Playing {constants['startup_mp3_filename']}")
             audio.play(decoder)
+
+        # Periodically feed the watch dog
+        if clock > next_watch_dog_clock:
+            watch_dog.feed()
+            print(f".")
+            next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
 
         # Handle updates by state
         if current_state == State.STANDBY:
