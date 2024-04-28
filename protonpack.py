@@ -4,7 +4,6 @@ import gc
 import os
 import random
 import sys
-import time
 
 import audiomp3
 import audiopwmio
@@ -79,11 +78,20 @@ def setup_watch_dog(timeout):
     return watch_dog
 
 
-def format_time(seconds):
+def format_time(milliseconds):
+    seconds = milliseconds // 1000
+    milliseconds = milliseconds % 1000
+    tenths_of_seconds = milliseconds // 100  # Get the first digit of the milliseconds to represent tenths of a second
+
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     seconds = seconds % 60
-    return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+
+    return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}.{int(tenths_of_seconds)}"
+
+
+def clamp(value, min_value, max_value):
+    return max(min_value, min(value, max_value))
 
 
 def print_state(state):
@@ -218,7 +226,7 @@ def main_loop():
             elapsed_time = (clock - start_clock) / 1000  # Convert ms to seconds
             loops_per_second = loop_count / elapsed_time if elapsed_time > 0 else 0
             print(
-                f"{format_time(elapsed_time)} {print_state(current_state)} loop {loop_count:,} at {loops_per_second:.2f} loops/s free={pretty_print_bytes(gc.mem_free())}")
+                f"{format_time(clock - start_clock)} {print_state(current_state)} loop {loop_count:,} at {loops_per_second:.2f} loops/s free={pretty_print_bytes(gc.mem_free())}")
             next_stat_clock = clock + constants['stat_clock_time_ms']
 
         # check hero_switch
@@ -245,8 +253,8 @@ def main_loop():
         # Periodically feed the watch dog
         if clock > next_watch_dog_clock:
             watch_dog.feed()
-            elapsed_time = (clock - start_clock) / 1000  # Convert ms to seconds
-            print(f"{format_time(elapsed_time)} watchdog fed, next in {(constants['watch_dog_timeout_secs'] * 0.5)} secs")
+            print(
+                f"{format_time(clock - start_clock)} watchdog fed, next in {(constants['watch_dog_timeout_secs'] * 0.5)} secs")
 
             next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
 
@@ -283,8 +291,9 @@ def main_loop():
                 ring_pixels[cyclotron_cursor_off] = OFF
 
                 # increment cursors
-                cyclotron_cursor_off = (cyclotron_cursor_on - cyclotron_cursor_width) % len(ring_pixels)
-                cyclotron_cursor_on = (cyclotron_cursor_on + 1) % len(ring_pixels)
+                cyclotron_cursor_off = clamp((cyclotron_cursor_on - cyclotron_cursor_width) % len(ring_pixels), 0,
+                                             len(ring_pixels) - 1)
+                cyclotron_cursor_on = clamp((cyclotron_cursor_on + 1) % len(ring_pixels), 0, len(ring_pixels) - 1)
 
             # Update the Power Meter
             if clock > next_power_meter_clock:
@@ -301,7 +310,7 @@ def main_loop():
                         power_meter_limit = len(stick_pixels) - 1
 
                     # Mark the limits and determine the next
-                    power_meter_max_previous = power_meter_max
+                    power_meter_max_previous = clamp(power_meter_max, 0, len(stick_pixels))
                     power_meter_max = random.randrange(0, power_meter_limit)
 
                     # Blank the meter and start again
@@ -313,10 +322,10 @@ def main_loop():
                 stick_pixels[power_meter_max_previous] = GREEN
 
                 # Next time, try a little higher.
-                power_meter_cursor += 1
+                power_meter_cursor = clamp(power_meter_cursor + 1, 0, len(stick_pixels) - 1)
         else:
             # We shouldn't be in this state
             print(f"*** Switching from {print_state(current_state)} to {print_state(State.POWER_ON)}")
             current_state = State.POWER_ON
 
-        time.sleep(constants['sleep_time_secs'])
+        # time.sleep(constants['sleep_time_secs'])
