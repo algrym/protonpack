@@ -9,6 +9,7 @@ import time
 import audiomp3
 import audiopwmio
 import supervisor
+from watchdog import WatchDogMode
 
 import adafruit_fancyled.adafruit_fancyled as fancyled
 import board
@@ -17,7 +18,6 @@ import microcontroller
 import neopixel
 from adafruit_debouncer import Debouncer
 from code import __version__  # Import __version__ from code.py
-from watchdog import WatchDogMode
 
 
 # State definitions
@@ -67,6 +67,7 @@ def load_constants():
         print(f"    - {i} = {constants[i]}")
     return constants
 
+
 def setup_watch_dog(timeout):
     watch_dog = microcontroller.watchdog
     if timeout > 8:  # Hardware maximum of 8 secs
@@ -76,6 +77,7 @@ def setup_watch_dog(timeout):
     print(f"- Watch dog released.  Feed every {timeout} seconds or else.")
     watch_dog.feed()  # make sure the dog is fed before turning him loose
     return watch_dog
+
 
 def format_time(seconds):
     hours = seconds // 3600
@@ -187,6 +189,7 @@ def main_loop():
     power_meter_max: int = 1
     power_meter_max_previous: int = 0
     power_meter_cursor: int = 1
+    power_meter_limit: int = 1
 
     # Initialize hero switch state
     hero_switch.update()
@@ -233,6 +236,7 @@ def main_loop():
 
             cyclotron_speed = constants['cyclotron_starting_speed']
             power_meter_speed = constants['power_meter_starting_speed']
+            power_meter_limit = 0
             power_meter_cursor = 1
 
             print(f" - Playing {constants['startup_mp3_filename']}")
@@ -241,7 +245,9 @@ def main_loop():
         # Periodically feed the watch dog
         if clock > next_watch_dog_clock:
             watch_dog.feed()
-            print(f".")
+            elapsed_time = (clock - start_clock) / 1000  # Convert ms to seconds
+            print(f"{format_time(elapsed_time)} watchdog fed, next in {(constants['watch_dog_timeout_secs'] * 0.5)} secs")
+
             next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
 
         # Handle updates by state
@@ -262,16 +268,11 @@ def main_loop():
             pass
 
         elif current_state == State.LOOP_IDLE:
-            # Gradually speed up the displays
+            # Gradually speed up the cyclotron
             if cyclotron_speed > constants['cyclotron_speed']:
                 cyclotron_speed -= 5
             elif cyclotron_speed < constants['cyclotron_speed']:
                 cyclotron_speed = constants['cyclotron_speed']
-
-            if power_meter_speed > constants['power_meter_speed']:
-                power_meter_speed -= 1
-            elif power_meter_speed < constants['power_meter_speed']:
-                power_meter_speed = constants['power_meter_speed']
 
             if clock > next_cyclotron_clock:
                 # Calculate time of next cyclotron update
@@ -292,14 +293,26 @@ def main_loop():
                 # reset if the cursor is over the max
                 if power_meter_cursor > power_meter_max:
                     ring_pixels[cyclotron_cursor_off] = ON  # spark when we hit max
+
+                    # Increment the limit until we reach maximum
+                    if power_meter_limit < (len(stick_pixels) - 1):
+                        power_meter_limit += 1
+                    elif power_meter_limit > (len(stick_pixels) - 1):
+                        power_meter_limit = len(stick_pixels) - 1
+
+                    # Mark the limits and determine the next
                     power_meter_max_previous = power_meter_max
-                    power_meter_max = random.randrange(0, len(stick_pixels) - 1)
+                    power_meter_max = random.randrange(0, power_meter_limit)
+
+                    # Blank the meter and start again
                     power_meter_cursor = 0
                     stick_pixels.fill(OFF)
 
                 # turn on the appropriate pixels
                 stick_pixels[power_meter_cursor] = BLUE
                 stick_pixels[power_meter_max_previous] = GREEN
+
+                # Next time, try a little higher.
                 power_meter_cursor += 1
         else:
             # We shouldn't be in this state
