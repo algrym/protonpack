@@ -7,6 +7,7 @@ import sys
 
 import audiomp3
 import audiopwmio
+import rotaryio
 import supervisor
 from watchdog import WatchDogMode
 
@@ -153,6 +154,7 @@ def main_loop():
     WHITE = fancyled.gamma_adjust(fancyled.CRGB(255, 255, 255), brightness=brightness_levels).pack()
     ON = (255, 255, 255)
     OFF = (0, 0, 0)
+    color_list = [RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, WHITE]
 
     # Initialize Neopixels
     print(f" - neopixel v{neopixel.__version__}")
@@ -177,6 +179,20 @@ def main_loop():
     hero_switch_pin_input.pull = digitalio.Pull.UP
     hero_switch = Debouncer(hero_switch_pin_input)
 
+    # initialize rotary encoder button
+    print(" - Rotary encoder:")
+    print(f"   - button on {constants['rotary_encoder_button_pin']}")
+    rotary_encoder_button_input = digitalio.DigitalInOut(constants['rotary_encoder_button_pin'])
+    rotary_encoder_button_input.direction = digitalio.Direction.INPUT
+    rotary_encoder_button_input.pull = digitalio.Pull.UP
+    rotary_encoder_button = Debouncer(rotary_encoder_button_input)
+
+    # initialize rotary encoder
+    print(f"   -  clock on {constants['rotary_encoder_clock_pin']}")
+    print(f"   -     dt on {constants['rotary_encoder_dt_pin']}")
+    rotary_encoder = rotaryio.IncrementalEncoder(constants['rotary_encoder_clock_pin'],
+                                                 constants['rotary_encoder_dt_pin'])
+
     # Initialize audio and startup noise
     print(f" - Audio out on {constants['audio_out_pin']}")
     audio = audiopwmio.PWMAudioOut(constants['audio_out_pin'])
@@ -190,6 +206,7 @@ def main_loop():
     cyclotron_cursor_width: int = constants['neopixel_ring_cursor_size']
     cyclotron_cursor_on: int = 0
     cyclotron_cursor_off: int = 0
+    cyclotron_color_index: int = 0
 
     # Initialize power meter counters
     power_meter_speed: int = constants['power_meter_speed']
@@ -213,6 +230,7 @@ def main_loop():
     next_stat_clock: int = supervisor.ticks_ms() + constants['stat_clock_time_ms']
     loop_count: int = 0
     next_watch_dog_clock: int = 0
+    rotary_encoder_last_position = None
 
     # main driver loop
     print("- Starting main driver loop")
@@ -258,6 +276,27 @@ def main_loop():
 
             next_watch_dog_clock = clock + (constants['watch_dog_timeout_secs'] * 500)
 
+        # check rotary encoder
+        rotary_encoder_button.update()
+        if rotary_encoder_button.rose:  # Handle trigger release
+            ring_pixels.fill(OFF)
+            if current_state == State.POWER_ON:
+                current_state = State.LOOP_IDLE
+            print(f"{format_time(clock - start_clock)} trigger rose, new state is {print_state(current_state)}")
+        elif rotary_encoder_button.fell:  # Handle trigger engage
+            ring_pixels.fill(WHITE)
+            if current_state == State.LOOP_IDLE:
+                current_state = State.POWER_ON
+            print(f"{format_time(clock - start_clock)} trigger fell, new state is {print_state(current_state)}")
+
+        # modify color as rotary encoder is turned
+        rotary_encoder_current_position = rotary_encoder.position
+        if rotary_encoder_last_position is None or rotary_encoder_current_position != rotary_encoder_last_position:
+            cyclotron_color_index = rotary_encoder_current_position % len(color_list)
+            print(
+                f" - Ring color set to {color_list[cyclotron_color_index]} from encoder {rotary_encoder_current_position}")
+        rotary_encoder_last_position = rotary_encoder_current_position
+
         # Handle updates by state
         if current_state == State.STANDBY:
             # Blink the Power Meter
@@ -273,7 +312,25 @@ def main_loop():
                     power_meter_cursor += 1
 
         elif current_state == State.POWER_ON:
-            pass
+            # Trigger active: flash the cyclotron!
+            flash_random = random.randrange(0, 20)
+            if flash_random < 3:
+                ring_pixels.fill(color_list[cyclotron_color_index])
+            elif flash_random == 4:
+                ring_pixels.fill(WHITE)
+            elif flash_random == 5:
+                ring_pixels.fill(color_list[random.randrange(0, len(color_list))])
+            else:
+                ring_pixels.fill(OFF)
+
+            # Trigger active: decrement the power meter!
+            if clock > next_power_meter_clock:
+                # Calculate time of next power meter update
+                next_power_meter_clock = clock + (power_meter_speed * 50)
+                if power_meter_cursor > 0:
+                    stick_pixels[power_meter_cursor] = OFF
+                    stick_pixels[power_meter_max_previous] = GREEN
+                    power_meter_cursor -= 1
 
         elif current_state == State.LOOP_IDLE:
             # Gradually speed up the cyclotron
@@ -287,7 +344,7 @@ def main_loop():
                 next_cyclotron_clock = clock + cyclotron_speed
 
                 # turn on the appropriate pixels
-                ring_pixels[cyclotron_cursor_on] = RED
+                ring_pixels[cyclotron_cursor_on] = color_list[cyclotron_color_index]
                 ring_pixels[cyclotron_cursor_off] = OFF
 
                 # increment cursors
