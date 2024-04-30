@@ -294,7 +294,8 @@ def main_loop():
         if rotary_encoder_last_position is None or rotary_encoder_current_position != rotary_encoder_last_position:
             cyclotron_color_index = rotary_encoder_current_position % len(color_list)
             print(
-                f" - Ring color set to {color_list[cyclotron_color_index]} from encoder {rotary_encoder_current_position}")
+                f" - Ring color set to #{cyclotron_color_index} from encoder {rotary_encoder_current_position}")
+
         rotary_encoder_last_position = rotary_encoder_current_position
 
         # Handle updates by state
