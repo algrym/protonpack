@@ -262,6 +262,7 @@ def main_loop():
             print(f" - Hero switch fell: current_state={print_state(current_state)}")
 
             print(f" - Playing {constants['shutdown_mp3_filename']}")
+            audio.stop()
             audio.play(decoder_shutdown)
 
             ring_pixels.fill(OFF)
@@ -277,6 +278,7 @@ def main_loop():
             power_meter_cursor = 1
 
             print(f" - Playing {constants['startup_mp3_filename']}")
+            audio.stop()
             audio.play(decoder_startup)
 
         # Periodically feed the watch dog
@@ -291,12 +293,14 @@ def main_loop():
         rotary_encoder_button.update()
         if rotary_encoder_button.rose:  # Handle trigger release
             ring_pixels.fill(OFF)
+            audio.stop()
             if current_state == State.POWER_ON:
                 current_state = State.LOOP_IDLE
             print(f"{format_time(clock - start_clock)} trigger rose, new state is {print_state(current_state)}")
         elif rotary_encoder_button.fell:  # Handle trigger engage
             if current_state == State.LOOP_IDLE:
                 print(f" - Playing {constants['firing_mp3_filename']}")
+                audio.stop()
                 audio.play(decoder_firing)
                 current_state = State.POWER_ON
             print(f"{format_time(clock - start_clock)} trigger fell, new state is {print_state(current_state)}")
