@@ -1,9 +1,9 @@
 # This works for Macs.  Need to update for other platforms.
 UF2_DIR=/Volumes/RPI-RP2
 CIRCUIT_PYTHON_DIR=/Volumes/CIRCUITPY
-CIRCUIT_PYTHON_VER=9.0.3
+CIRCUIT_PYTHON_VER=9.0.4
 CIRCUIT_PYTHON_LIB_VER=9.x
-CIRCUIT_PYTHON_LIB_DATE=20240426
+CIRCUIT_PYTHON_LIB_DATE=20240501
 CODEPY_DIR=$(CIRCUIT_PYTHON_DIR)/
 CODEPY_LIB_DIR=$(CIRCUIT_PYTHON_DIR)/lib
 
@@ -40,10 +40,12 @@ test: venv
 downloads: \
 	downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-$(CIRCUIT_PYTHON_VER).uf2 \
 	downloads/adafruit-circuitpython-bundle-$(CIRCUIT_PYTHON_LIB_VER)-mpy-$(CIRCUIT_PYTHON_LIB_DATE).zip \
-	KJH_PackstartCombo.mp3
+	KJH_PackstartCombo.mp3 \
+	KJH_Nutrona3.mp3 \
+	KJH_PackstopDigital.mp3
 
-KJH_PackstartCombo.mp3:
-	curl -LO http://hprops.com/sounds/KJH_PackstartCombo.mp3
+%.mp3:
+	curl -LO http://hprops.com/sounds/$@
 
 downloads/adafruit-circuitpython-bundle-$(CIRCUIT_PYTHON_LIB_VER)-mpy-$(CIRCUIT_PYTHON_LIB_DATE).zip:
 	test -d downloads || mkdir downloads
@@ -58,11 +60,13 @@ install_circuit_python: downloads/adafruit-circuitpython-raspberry_pi_pico-en_US
 	cp downloads/adafruit-circuitpython-raspberry_pi_pico-en_US-$(CIRCUIT_PYTHON_VER).uf2 $(UF2_DIR)/
 
 install: all
-	rsync -avlcC \
+	rsync -avlcC --progress \
 		code.py protonpack.py settings.toml \
 			$(CODEPY_DIR)
 	rsync -avlcC \
 		KJH_PackstartCombo.mp3 \
+		KJH_Nutrona3.mp3 \
+		KJH_PackstopDigital.mp3 \
 		downloads/adafruit-circuitpython-bundle-$(CIRCUIT_PYTHON_LIB_VER)-mpy-$(CIRCUIT_PYTHON_LIB_DATE)/lib/neopixel* \
 		downloads/adafruit-circuitpython-bundle-$(CIRCUIT_PYTHON_LIB_VER)-mpy-$(CIRCUIT_PYTHON_LIB_DATE)/lib/*ticks* \
 		downloads/adafruit-circuitpython-bundle-$(CIRCUIT_PYTHON_LIB_VER)-mpy-$(CIRCUIT_PYTHON_LIB_DATE)/lib/*debouncer* \

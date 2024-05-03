@@ -44,6 +44,8 @@ def load_constants():
     constants['sleep_time_secs'] = float(os.getenv('sleep_time_secs', "0.01"))
     constants['audio_out_pin'] = get_pin(os.getenv('audio_out_pin', "GP21"))
     constants['startup_mp3_filename'] = os.getenv('startup_mp3_filename', "lib/KJH_PackstartCombo.mp3")
+    constants['shutdown_mp3_filename'] = os.getenv('shutdown_mp3_filename', "lib/KJH_PackstopCombo.mp3")
+    constants['firing_mp3_filename'] = os.getenv('firing_mp3_filename', "lib/KJH_Nutrona3.mp3")
     constants['neopixel_ring_pin'] = get_pin(os.getenv('neopixel_ring_pin', "GP28"))
     constants['neopixel_ring_size'] = int(os.getenv('neopixel_ring_size', "60"))
     constants['neopixel_ring_cursor_size'] = int(os.getenv('neopixel_ring_cursor_size', "3"))
@@ -198,7 +200,13 @@ def main_loop():
     audio = audiopwmio.PWMAudioOut(constants['audio_out_pin'])
 
     print(f" - Loading startup MP3: {constants['startup_mp3_filename']}")
-    decoder = audiomp3.MP3Decoder(open(constants['startup_mp3_filename'], 'rb'))
+    decoder_startup = audiomp3.MP3Decoder(open(constants['startup_mp3_filename'], 'rb'))
+
+    print(f" - Loading shutdown MP3: {constants['shutdown_mp3_filename']}")
+    decoder_shutdown = audiomp3.MP3Decoder(open(constants['shutdown_mp3_filename'], 'rb'))
+
+    print(f" - Loading firing MP3: {constants['firing_mp3_filename']}")
+    decoder_firing = audiomp3.MP3Decoder(open(constants['firing_mp3_filename'], 'rb'))
 
     # Initialize cyclotron counters
     cyclotron_speed: int = constants['cyclotron_speed']
@@ -253,6 +261,9 @@ def main_loop():
             current_state = State.STANDBY
             print(f" - Hero switch fell: current_state={print_state(current_state)}")
 
+            print(f" - Playing {constants['shutdown_mp3_filename']}")
+            audio.play(decoder_shutdown)
+
             ring_pixels.fill(OFF)
             stick_pixels.fill(OFF)
 
@@ -266,7 +277,7 @@ def main_loop():
             power_meter_cursor = 1
 
             print(f" - Playing {constants['startup_mp3_filename']}")
-            audio.play(decoder)
+            audio.play(decoder_startup)
 
         # Periodically feed the watch dog
         if clock > next_watch_dog_clock:
@@ -284,8 +295,9 @@ def main_loop():
                 current_state = State.LOOP_IDLE
             print(f"{format_time(clock - start_clock)} trigger rose, new state is {print_state(current_state)}")
         elif rotary_encoder_button.fell:  # Handle trigger engage
-            ring_pixels.fill(WHITE)
             if current_state == State.LOOP_IDLE:
+                print(f" - Playing {constants['firing_mp3_filename']}")
+                audio.play(decoder_firing)
                 current_state = State.POWER_ON
             print(f"{format_time(clock - start_clock)} trigger fell, new state is {print_state(current_state)}")
 
@@ -383,7 +395,7 @@ def main_loop():
                 power_meter_cursor = clamp(power_meter_cursor + 1, 0, len(stick_pixels) - 1)
         else:
             # We shouldn't be in this state
-            print(f"*** Switching from {print_state(current_state)} to {print_state(State.POWER_ON)}")
-            current_state = State.POWER_ON
+            print(f"*** Switching from {print_state(current_state)} to {print_state(State.STANDBY)}")
+            current_state = State.STANDBY
 
         # time.sleep(constants['sleep_time_secs'])
